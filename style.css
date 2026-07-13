@@ -251,7 +251,8 @@ textarea { resize: vertical; }
 
 .lote-poligono {
   stroke: rgba(0, 0, 0, 0.35);
-  stroke-width: 0.15;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
   cursor: pointer;
 }
 
@@ -260,13 +261,15 @@ textarea { resize: vertical; }
 .lote-poligono:active,
 .lote-poligono.seleccionado {
   stroke: #1a1a1a;
-  stroke-width: 0.4;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
 }
 
 .marcador-ubicacion {
   fill: #d32f2f;
   stroke: white;
-  stroke-width: 0.15;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
 .mapa-info {
