@@ -222,6 +222,15 @@ function actualizarCamposSiembraSegunCultivo() {
 }
 
 // --- Chips de categoría: acordeón (solo un formulario abierto a la vez) ---
+let edicionActual = null; // { id, tipo } del registro que se está editando, o null si es carga nueva
+
+function salirModoEdicion(form) {
+  edicionActual = null;
+  form.reset();
+  const boton = form.querySelector('button[type="submit"]');
+  if (boton) boton.textContent = "Guardar";
+}
+
 document.getElementById("chips-categorias").addEventListener("click", (e) => {
   const btn = e.target.closest(".chip-categoria");
   if (!btn) return;
@@ -229,19 +238,61 @@ document.getElementById("chips-categorias").addEventListener("click", (e) => {
   const estabaAbierto = !form.hidden;
   document.querySelectorAll(".form-categoria").forEach((f) => (f.hidden = true));
   form.hidden = estabaAbierto;
+  if (form.id === "form-pulverizacion") document.getElementById("productos-lista").innerHTML = "";
+  if (form.id === "form-siembra") document.getElementById("fertilizantes-lista").innerHTML = "";
+  salirModoEdicion(form);
   if (!form.hidden) {
     const fechaInput = form.querySelector('[name="fecha"]');
     if (fechaInput && !fechaInput.value) fechaInput.valueAsDate = new Date();
-    if (form.id === "form-pulverizacion" && !document.getElementById("productos-lista").children.length) {
-      agregarFilaProducto();
-    }
-    if (form.id === "form-siembra" && !document.getElementById("fertilizantes-lista").children.length) {
+    if (form.id === "form-pulverizacion") agregarFilaProducto();
+    if (form.id === "form-siembra") {
       agregarFilaFertilizante({ nombre: "Urea" });
       agregarFilaFertilizante({ nombre: "Superfosfato Simple" });
     }
     form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
+
+// --- Editar un registro existente ---
+function editarRegistro(id) {
+  const registro = cargarRegistros().find((r) => r.id === id);
+  if (!registro) return;
+  const form = document.getElementById("form-" + registro.tipo);
+
+  document.querySelectorAll(".form-categoria").forEach((f) => {
+    if (f !== form) f.hidden = true;
+  });
+  form.hidden = false;
+
+  form.reset();
+  document.getElementById("productos-lista").innerHTML = "";
+  document.getElementById("fertilizantes-lista").innerHTML = "";
+
+  Object.keys(registro).forEach((campo) => {
+    if (form.elements[campo]) form.elements[campo].value = registro[campo];
+  });
+
+  if (registro.tipo === "pulverizacion") {
+    (registro.productos || []).forEach((p) => agregarFilaProducto(p));
+    if (!document.getElementById("productos-lista").children.length) agregarFilaProducto();
+  }
+  if (registro.tipo === "siembra") {
+    document.getElementById("campana-cultivo").value = registro.cultivo;
+    actualizarCamposSiembraSegunCultivo();
+    (registro.fertilizantes || []).forEach((f) => agregarFilaFertilizante(f));
+    if (!document.getElementById("fertilizantes-lista").children.length) {
+      agregarFilaFertilizante({ nombre: "Urea" });
+      agregarFilaFertilizante({ nombre: "Superfosfato Simple" });
+    }
+    actualizarResultadoSiembra();
+  }
+  if (registro.tipo === "emergencia") actualizarResultadoEmergencia();
+
+  edicionActual = { id: registro.id, tipo: registro.tipo };
+  const boton = form.querySelector('button[type="submit"]');
+  if (boton) boton.textContent = "Guardar cambios";
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 // --- Cálculo de semillas/ha (Siembra) ---
 function calcularSemillasSiembra(datos, cultivo) {
@@ -317,6 +368,9 @@ function requiereCampana() {
 }
 
 function guardarRegistroCategoria(tipo, datosExtra) {
+  if (edicionActual && edicionActual.tipo === tipo) {
+    return db.collection("registros").doc(edicionActual.id).update(datosExtra);
+  }
   const campana = requiereCampana();
   if (!campana) return null;
   const registro = {
@@ -333,14 +387,15 @@ function guardarRegistroCategoria(tipo, datosExtra) {
 document.getElementById("form-malezas").addEventListener("submit", (e) => {
   e.preventDefault();
   const form = e.target;
+  const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
   const promesa = guardarRegistroCategoria("malezas", datos);
   if (!promesa) return;
   promesa
     .then(() => {
-      form.reset();
+      salirModoEdicion(form);
       form.hidden = true;
-      mostrarToast("Malezas guardadas");
+      mostrarToast(editando ? "Malezas actualizadas" : "Malezas guardadas");
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -349,6 +404,7 @@ document.getElementById("form-malezas").addEventListener("submit", (e) => {
 document.getElementById("form-pulverizacion").addEventListener("submit", (e) => {
   e.preventDefault();
   const form = e.target;
+  const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
   const productos = [...document.querySelectorAll("#productos-lista .producto-fila")]
     .map((fila) => ({
@@ -361,10 +417,10 @@ document.getElementById("form-pulverizacion").addEventListener("submit", (e) => 
   if (!promesa) return;
   promesa
     .then(() => {
-      form.reset();
+      salirModoEdicion(form);
       document.getElementById("productos-lista").innerHTML = "";
       form.hidden = true;
-      mostrarToast("Pulverización guardada");
+      mostrarToast(editando ? "Pulverización actualizada" : "Pulverización guardada");
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -373,9 +429,10 @@ document.getElementById("form-pulverizacion").addEventListener("submit", (e) => 
 document.getElementById("form-siembra").addEventListener("submit", (e) => {
   e.preventDefault();
   const form = e.target;
+  const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
-  const campana = campanaActivaDe(loteActual);
-  const { semillasHaBruto, semillasHaViables } = calcularSemillasSiembra(datos, campana ? campana.cultivo : "");
+  const cultivo = document.getElementById("campana-cultivo").value;
+  const { semillasHaBruto, semillasHaViables } = calcularSemillasSiembra(datos, cultivo);
   const fertilizantes = [...document.querySelectorAll("#fertilizantes-lista .producto-fila")]
     .map((fila) => ({
       nombre: fila.querySelector(".fertilizante-nombre").value.trim(),
@@ -386,11 +443,11 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
   if (!promesa) return;
   promesa
     .then(() => {
-      form.reset();
-      form.hidden = true;
+      salirModoEdicion(form);
       document.getElementById("siembra-resultado").textContent = "";
       document.getElementById("fertilizantes-lista").innerHTML = "";
-      mostrarToast("Siembra guardada");
+      form.hidden = true;
+      mostrarToast(editando ? "Siembra actualizada" : "Siembra guardada");
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -399,6 +456,7 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
 document.getElementById("form-emergencia").addEventListener("submit", (e) => {
   e.preventDefault();
   const form = e.target;
+  const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
   const siembra = buscarSiembraActual();
   let coeficienteLogro = "";
@@ -409,10 +467,10 @@ document.getElementById("form-emergencia").addEventListener("submit", (e) => {
   if (!promesa) return;
   promesa
     .then(() => {
-      form.reset();
-      form.hidden = true;
+      salirModoEdicion(form);
       document.getElementById("emergencia-resultado").textContent = "";
-      mostrarToast("Emergencia guardada");
+      form.hidden = true;
+      mostrarToast(editando ? "Emergencia actualizada" : "Emergencia guardada");
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -421,14 +479,15 @@ document.getElementById("form-emergencia").addEventListener("submit", (e) => {
 document.getElementById("form-cosecha").addEventListener("submit", (e) => {
   e.preventDefault();
   const form = e.target;
+  const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
   const promesa = guardarRegistroCategoria("cosecha", datos);
   if (!promesa) return;
   promesa
     .then(() => {
-      form.reset();
+      salirModoEdicion(form);
       form.hidden = true;
-      mostrarToast("Cosecha guardada");
+      mostrarToast(editando ? "Cosecha actualizada" : "Cosecha guardada");
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -460,7 +519,10 @@ function renderTarjetaTimeline(r) {
         <span class="lote-fecha">${escapeHtml(r.fecha || "")}</span>
       </div>
       <dl>${detalle}</dl>
-      <button class="btn-eliminar" data-id="${r.id}">Eliminar</button>
+      <div class="tarjeta-acciones">
+        <button class="btn-editar" data-id="${r.id}">Editar</button>
+        <button class="btn-eliminar" data-id="${r.id}">Eliminar</button>
+      </div>
     </div>
   `;
 }
@@ -488,6 +550,11 @@ function detalleParaMostrar(r) {
 }
 
 document.getElementById("ficha-timeline").addEventListener("click", (e) => {
+  const btnEditar = e.target.closest(".btn-editar");
+  if (btnEditar) {
+    editarRegistro(btnEditar.dataset.id);
+    return;
+  }
   const btn = e.target.closest(".btn-eliminar");
   if (!btn) return;
   if (!confirm("¿Eliminar este registro?")) return;

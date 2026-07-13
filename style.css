@@ -210,15 +210,24 @@ textarea { resize: vertical; }
 .registro-card dt { font-weight: 600; margin-top: 6px; }
 .registro-card dd { margin: 2px 0 0; }
 
-.btn-eliminar {
+.tarjeta-acciones {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.btn-eliminar,
+.btn-editar {
   background: none;
   border: none;
-  color: #b33;
   font-size: 0.85rem;
   cursor: pointer;
   padding: 4px 0;
   text-decoration: underline;
 }
+
+.btn-eliminar { color: #b33; }
+.btn-editar { color: var(--verde); }
 
 .vacio {
   text-align: center;
