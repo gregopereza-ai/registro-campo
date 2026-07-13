@@ -110,6 +110,7 @@ function dibujarMapa() {
 // --- Exportar CSV ---
 function valorCampoCSV(r, campo) {
   if (campo === "productosTexto") return productosATexto(r.productos);
+  if (campo === "fertilizantesTexto") return fertilizantesATexto(r.fertilizantes);
   return r[campo];
 }
 
@@ -176,6 +177,7 @@ function importarCSV(tipo, archivo) {
       campos.forEach((c, i) => {
         const valor = valores[i] || "";
         if (c === "productosTexto") registro.productos = textoAProductos(valor);
+        else if (c === "fertilizantesTexto") registro.fertilizantes = textoAFertilizantes(valor);
         else registro[c] = valor;
       });
       registros.push(registro);

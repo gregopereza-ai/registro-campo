@@ -3,7 +3,7 @@ const CAMPANAS_KEY = "zogoibi-campanas-lote";
 const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezasEmergidas", "malezasSinEmerger"],
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "productosTexto", "observaciones"],
-  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables"],
+  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "fertilizantesTexto"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
   cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "rendimientoKgHa", "humedad"],
 };
@@ -12,6 +12,7 @@ const ETIQUETAS_CAMPO = {
   fecha: "Fecha", lote: "Lote", cultivo: "Cultivo", temporada: "Temporada",
   malezasEmergidas: "Malezas emergidas", malezasSinEmerger: "Malezas sin emerger",
   momento: "Momento", productosTexto: "Productos", observaciones: "Observaciones",
+  fertilizantesTexto: "Fertilización (kg/ha)",
   variedad: "Variedad/Híbrido", hectareas: "Hectáreas", origen: "Origen", pg: "PG (%)",
   dosisKgHa: "Dosis (kg/ha)", pmg: "PMG (g)", semillasPorMetro: "Semillas/metro", distanciaCm: "Distancia (cm)",
   semillasHaBruto: "Semillas/ha (bruto)", semillasHaViables: "Semillas/ha (viables)",
@@ -83,6 +84,39 @@ document.getElementById("productos-lista").addEventListener("click", (e) => {
   btn.closest(".producto-fila").remove();
 });
 
+// --- Fertilizantes de Siembra (misma serialización simple, sin unidad porque siempre es kg/ha) ---
+function fertilizantesATexto(fertilizantes) {
+  return (fertilizantes || []).map((f) => `${f.nombre}|${f.dosis}`).join(";");
+}
+
+function textoAFertilizantes(texto) {
+  if (!texto) return [];
+  return texto.split(";").filter(Boolean).map((parte) => {
+    const [nombre, dosis] = parte.split("|");
+    return { nombre: nombre || "", dosis: dosis || "" };
+  });
+}
+
+function agregarFilaFertilizante(valores = {}) {
+  const cont = document.getElementById("fertilizantes-lista");
+  const fila = document.createElement("div");
+  fila.className = "producto-fila";
+  fila.innerHTML = `
+    <input type="text" class="fertilizante-nombre" placeholder="Fertilizante (ej: Urea)" value="${(valores.nombre || "").replace(/"/g, "&quot;")}">
+    <input type="number" class="fertilizante-dosis" placeholder="Kg/ha" step="0.1" value="${valores.dosis || ""}">
+    <button type="button" class="btn-quitar-producto">✕</button>
+  `;
+  cont.appendChild(fila);
+}
+
+document.getElementById("btn-agregar-fertilizante").addEventListener("click", () => agregarFilaFertilizante());
+
+document.getElementById("fertilizantes-lista").addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-quitar-producto");
+  if (!btn) return;
+  btn.closest(".producto-fila").remove();
+});
+
 // --- Abrir / cerrar Ficha del lote ---
 function abrirFicha(nombreLote) {
   loteActual = nombreLote;
@@ -101,6 +135,7 @@ function abrirFicha(nombreLote) {
     f.reset();
   });
   document.getElementById("productos-lista").innerHTML = "";
+  document.getElementById("fertilizantes-lista").innerHTML = "";
   document.getElementById("siembra-resultado").textContent = "";
   document.getElementById("emergencia-resultado").textContent = "";
   document.getElementById("ficha-historial").hidden = true;
@@ -189,6 +224,10 @@ document.getElementById("chips-categorias").addEventListener("click", (e) => {
     if (fechaInput && !fechaInput.value) fechaInput.valueAsDate = new Date();
     if (form.id === "form-pulverizacion" && !document.getElementById("productos-lista").children.length) {
       agregarFilaProducto();
+    }
+    if (form.id === "form-siembra" && !document.getElementById("fertilizantes-lista").children.length) {
+      agregarFilaFertilizante({ nombre: "Urea" });
+      agregarFilaFertilizante({ nombre: "Superfosfato Simple" });
     }
     form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -322,10 +361,17 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
   const datos = Object.fromEntries(new FormData(form).entries());
   const campana = campanaActivaDe(loteActual);
   const { semillasHaBruto, semillasHaViables } = calcularSemillasSiembra(datos, campana ? campana.cultivo : "");
-  if (guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables })) {
+  const fertilizantes = [...document.querySelectorAll("#fertilizantes-lista .producto-fila")]
+    .map((fila) => ({
+      nombre: fila.querySelector(".fertilizante-nombre").value.trim(),
+      dosis: fila.querySelector(".fertilizante-dosis").value,
+    }))
+    .filter((f) => f.nombre && f.dosis);
+  if (guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables, fertilizantes })) {
     form.reset();
     form.hidden = true;
     document.getElementById("siembra-resultado").textContent = "";
+    document.getElementById("fertilizantes-lista").innerHTML = "";
     mostrarToast("Siembra guardada");
     renderTimeline();
   }
@@ -402,10 +448,15 @@ function detalleParaMostrar(r) {
     return filas.filter(([, v]) => v).map(([label, v]) => `<dt>${label}</dt><dd>${escapeHtml(v)}</dd>`).join("");
   }
   const campos = CAMPOS_CATEGORIA[r.tipo] || [];
-  return campos
-    .filter((c) => !["fecha", "lote", "cultivo", "temporada"].includes(c) && r[c])
+  let html = campos
+    .filter((c) => !["fecha", "lote", "cultivo", "temporada", "fertilizantesTexto"].includes(c) && r[c])
     .map((c) => `<dt>${ETIQUETAS_CAMPO[c] || c}</dt><dd>${escapeHtml(String(r[c]))}</dd>`)
     .join("");
+  if (r.tipo === "siembra") {
+    const fertTexto = (r.fertilizantes || []).map((f) => `${f.nombre} — ${f.dosis} kg/ha`).join("; ");
+    if (fertTexto) html += `<dt>Fertilización</dt><dd>${escapeHtml(fertTexto)}</dd>`;
+  }
+  return html;
 }
 
 document.getElementById("ficha-timeline").addEventListener("click", (e) => {

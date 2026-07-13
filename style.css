@@ -331,8 +331,10 @@ textarea { resize: vertical; }
   gap: 6px;
 }
 
-.producto-fila .producto-nombre { flex: 2; }
-.producto-fila .producto-dosis { flex: 1; min-width: 70px; }
+.producto-fila .producto-nombre,
+.producto-fila .fertilizante-nombre { flex: 2; }
+.producto-fila .producto-dosis,
+.producto-fila .fertilizante-dosis { flex: 1; min-width: 70px; }
 .producto-fila .producto-unidad { flex: 0 0 70px; }
 
 .btn-quitar-producto {
