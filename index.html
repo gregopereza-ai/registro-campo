@@ -15,28 +15,59 @@
 </header>
 
 <nav class="tabs" id="tabs">
-  <button class="tab-btn active" data-tab="recorrida">Recorrida</button>
-  <button class="tab-btn" data-tab="siembra">Siembra</button>
-  <button class="tab-btn" data-tab="mapa">Mapa</button>
-  <button class="tab-btn" data-tab="registros">Ver registros</button>
+  <button class="tab-btn active" data-tab="mapa">Mapa</button>
+  <button class="tab-btn" data-tab="registros">Registros</button>
 </nav>
 
 <main>
 
-  <section id="tab-recorrida" class="tab-panel active">
-    <h2>Nueva Recorrida de Barbecho</h2>
-    <form id="form-recorrida">
-      <label>Fecha
+  <section id="tab-mapa" class="tab-panel active">
+    <h2>Mapa de lotes</h2>
+    <p class="ayuda-mapa">Tocá un lote para abrir su ficha.</p>
+    <div class="leyenda-mapa">
+      <span class="leyenda-item"><span class="leyenda-color color-profundo"></span> Profundo</span>
+      <span class="leyenda-item"><span class="leyenda-color color-superficial"></span> Superficial</span>
+    </div>
+    <button id="btn-ir-a-mi-lote" class="btn-secundario btn-ancho">📍 Ir a mi lote</button>
+    <div id="mapa-contenedor"></div>
+  </section>
+
+  <section id="tab-ficha" class="tab-panel">
+    <button id="btn-volver-mapa" class="btn-volver" type="button">← Mapa</button>
+
+    <div class="ficha-header">
+      <h2 id="ficha-nombre">Lote</h2>
+      <p id="ficha-meta" class="ficha-meta"></p>
+    </div>
+
+    <div class="campana-selector">
+      <label>Cultivo
+        <select id="campana-cultivo">
+          <option value="Trigo">Trigo</option>
+          <option value="Soja">Soja</option>
+          <option value="Maíz">Maíz</option>
+          <option value="Girasol">Girasol</option>
+        </select>
+      </label>
+      <label>Temporada
+        <input type="text" id="campana-temporada" placeholder="Ej: 26/27">
+      </label>
+      <button id="btn-guardar-campana" class="btn-primary" type="button">Guardar campaña</button>
+    </div>
+    <p id="campana-actual-label" class="campana-actual-label"></p>
+
+    <div class="chips-categorias" id="chips-categorias">
+      <button class="chip-categoria" data-cat="malezas" type="button">🌿 Malezas</button>
+      <button class="chip-categoria" data-cat="pulverizacion" type="button">💧 Pulverización</button>
+      <button class="chip-categoria" data-cat="siembra" type="button">🌱 Siembra</button>
+      <button class="chip-categoria" data-cat="emergencia" type="button">📏 Emergencia</button>
+      <button class="chip-categoria" data-cat="cosecha" type="button">🌾 Floración/Cosecha</button>
+    </div>
+
+    <form id="form-malezas" class="form-categoria" hidden>
+      <h3>Nuevo relevamiento de malezas</h3>
+      <label>Fecha de monitoreo
         <input type="date" name="fecha" required>
-      </label>
-      <label>Lote
-        <div class="fila-input-boton">
-          <input type="text" name="lote" placeholder="Ej: 29 sur sup" required>
-          <button type="button" class="btn-ubicacion" data-form="recorrida">📍 Usar mi ubicación</button>
-        </div>
-      </label>
-      <label>Hectáreas
-        <input type="number" name="hectareas" min="0" step="0.1" placeholder="Ej: 40">
       </label>
       <label>Malezas emergidas
         <textarea name="malezasEmergidas" rows="3" placeholder="Ej: Nabo en baja densidad, Capiquí en el 70% del lote..."></textarea>
@@ -44,30 +75,44 @@
       <label>Malezas sin emerger <span class="opcional">(opcional)</span>
         <textarea name="malezasSinEmerger" rows="2"></textarea>
       </label>
-      <label>Pulverización planificada <span class="opcional">(opcional)</span>
-        <textarea name="pulverizacion" rows="2" placeholder="Ej: 17/06 — Sulfosato 1lt, Cletodim 0,5lt..."></textarea>
-      </label>
-      <button type="submit" class="btn-primary">Guardar Recorrida</button>
+      <button type="submit" class="btn-primary">Guardar</button>
     </form>
-  </section>
 
-  <section id="tab-siembra" class="tab-panel">
-    <h2>Nueva Siembra</h2>
-    <form id="form-siembra">
-      <label>Fecha
+    <form id="form-pulverizacion" class="form-categoria" hidden>
+      <h3>Nueva pulverización</h3>
+      <label>Momento
+        <select name="momento">
+          <option value="Barbecho">Barbecho</option>
+          <option value="Preemergente">Preemergente</option>
+          <option value="Postemergente">Postemergente</option>
+          <option value="Aéreo">Aéreo</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </label>
+      <label>Fecha de aplicación
         <input type="date" name="fecha" required>
       </label>
-      <label>Lote
-        <div class="fila-input-boton">
-          <input type="text" name="lote" placeholder="Ej: 35 sup" required>
-          <button type="button" class="btn-ubicacion" data-form="siembra">📍 Usar mi ubicación</button>
-        </div>
+      <div class="productos-bloque">
+        <span class="etiqueta-bloque">Productos</span>
+        <div id="productos-lista"></div>
+        <button type="button" id="btn-agregar-producto" class="btn-secundario">+ Agregar producto</button>
+      </div>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2" placeholder="Ej: viento leve, buena cobertura"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <form id="form-siembra" class="form-categoria" hidden>
+      <h3>Nueva siembra</h3>
+      <label>Fecha de siembra
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Variedad / híbrido
+        <input type="text" name="variedad" placeholder="Ej: Baguette 801">
       </label>
       <label>Hectáreas
         <input type="number" name="hectareas" min="0" step="0.1">
-      </label>
-      <label>Variedad de semilla
-        <input type="text" name="variedad" placeholder="Ej: Baguette 801">
       </label>
       <label>Origen
         <select name="origen">
@@ -76,51 +121,126 @@
           <option value="Comprada">Comprada</option>
         </select>
       </label>
-      <label>Densidad de siembra (kg/ha)
-        <input type="number" name="densidad" min="0" step="0.1">
+      <label>Poder germinativo — PG (%)
+        <input type="number" name="pg" min="0" max="100" step="0.1" placeholder="Ej: 92">
       </label>
-      <label>Observaciones <span class="opcional">(opcional)</span>
-        <textarea name="observaciones" rows="2"></textarea>
-      </label>
-      <button type="submit" class="btn-primary">Guardar Siembra</button>
-    </form>
-  </section>
 
-  <section id="tab-mapa" class="tab-panel">
-    <h2>Mapa de lotes</h2>
-    <p class="ayuda-mapa">Tocá un lote para ver su nombre y hectáreas.</p>
-    <div class="leyenda-mapa">
-      <span class="leyenda-item"><span class="leyenda-color color-profundo"></span> Profundo</span>
-      <span class="leyenda-item"><span class="leyenda-color color-superficial"></span> Superficial</span>
-    </div>
-    <div id="mapa-contenedor"></div>
-    <p id="mapa-info" class="mapa-info"></p>
+      <div id="siembra-campo-trigo" class="campos-cultivo">
+        <label>Dosis de siembra (kg/ha)
+          <input type="number" name="dosisKgHa" min="0" step="0.1">
+        </label>
+        <label>Peso de Mil Granos — PMG (g)
+          <input type="number" name="pmg" min="0" step="0.1">
+        </label>
+      </div>
+
+      <div id="siembra-campo-otros" class="campos-cultivo" hidden>
+        <label>Semillas por metro lineal
+          <input type="number" name="semillasPorMetro" min="0" step="0.1">
+        </label>
+        <label>Distancia entre líneas (cm)
+          <input type="number" name="distanciaCm" min="0" step="0.1">
+        </label>
+      </div>
+
+      <p id="siembra-resultado" class="resultado-calculado"></p>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <form id="form-emergencia" class="form-categoria" hidden>
+      <h3>Nueva emergencia del cultivo</h3>
+      <label>Fecha de conteo
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Plantas logradas / m²
+        <input type="number" name="plantasM2" min="0" step="0.1">
+      </label>
+      <p id="emergencia-resultado" class="resultado-calculado"></p>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <form id="form-cosecha" class="form-categoria" hidden>
+      <h3>Floración y Cosecha</h3>
+      <label>Fecha de floración
+        <input type="date" name="fechaFloracion">
+      </label>
+      <label>Fecha de cosecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Rendimiento (kg/ha)
+        <input type="number" name="rendimientoKgHa" min="0" step="1">
+      </label>
+      <label>Humedad de cosecha (%) <span class="opcional">(opcional)</span>
+        <input type="number" name="humedad" min="0" max="100" step="0.1">
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <h3>Línea de tiempo</h3>
+    <div id="ficha-timeline"></div>
+
+    <button id="btn-ver-historial" class="btn-secundario" type="button">Ver campañas anteriores</button>
+    <div id="ficha-historial" class="ficha-historial" hidden></div>
   </section>
 
   <section id="tab-registros" class="tab-panel">
-    <h2>Registros guardados</h2>
-    <div class="filtro-tipo">
-      <button class="filtro-btn active" data-filtro="todos">Todos</button>
-      <button class="filtro-btn" data-filtro="recorrida">Recorridas</button>
-      <button class="filtro-btn" data-filtro="siembra">Siembras</button>
+    <h2>Exportar / Importar datos</h2>
+    <p class="ayuda-mapa">Descargá tus datos en CSV para respaldarlos o pasarlos entre tu celular y tu computadora.</p>
+
+    <div class="categoria-csv">
+      <h3>Malezas</h3>
+      <div class="acciones">
+        <button class="btn-secundario btn-export" data-tipo="malezas">Descargar CSV</button>
+        <label class="btn-secundario btn-file">
+          Importar CSV
+          <input type="file" class="input-import" data-tipo="malezas" accept=".csv" hidden>
+        </label>
+      </div>
     </div>
 
-    <div class="acciones">
-      <button id="btn-export-recorrida" class="btn-secundario">Descargar CSV — Recorridas</button>
-      <button id="btn-export-siembra" class="btn-secundario">Descargar CSV — Siembras</button>
-    </div>
-    <div class="acciones">
-      <label class="btn-secundario btn-file">
-        Importar CSV — Recorridas
-        <input type="file" id="import-recorrida" accept=".csv" hidden>
-      </label>
-      <label class="btn-secundario btn-file">
-        Importar CSV — Siembras
-        <input type="file" id="import-siembra" accept=".csv" hidden>
-      </label>
+    <div class="categoria-csv">
+      <h3>Pulverizaciones</h3>
+      <div class="acciones">
+        <button class="btn-secundario btn-export" data-tipo="pulverizacion">Descargar CSV</button>
+        <label class="btn-secundario btn-file">
+          Importar CSV
+          <input type="file" class="input-import" data-tipo="pulverizacion" accept=".csv" hidden>
+        </label>
+      </div>
     </div>
 
-    <div id="lista-registros"></div>
+    <div class="categoria-csv">
+      <h3>Siembra</h3>
+      <div class="acciones">
+        <button class="btn-secundario btn-export" data-tipo="siembra">Descargar CSV</button>
+        <label class="btn-secundario btn-file">
+          Importar CSV
+          <input type="file" class="input-import" data-tipo="siembra" accept=".csv" hidden>
+        </label>
+      </div>
+    </div>
+
+    <div class="categoria-csv">
+      <h3>Emergencia</h3>
+      <div class="acciones">
+        <button class="btn-secundario btn-export" data-tipo="emergencia">Descargar CSV</button>
+        <label class="btn-secundario btn-file">
+          Importar CSV
+          <input type="file" class="input-import" data-tipo="emergencia" accept=".csv" hidden>
+        </label>
+      </div>
+    </div>
+
+    <div class="categoria-csv">
+      <h3>Floración y Cosecha</h3>
+      <div class="acciones">
+        <button class="btn-secundario btn-export" data-tipo="cosecha">Descargar CSV</button>
+        <label class="btn-secundario btn-file">
+          Importar CSV
+          <input type="file" class="input-import" data-tipo="cosecha" accept=".csv" hidden>
+        </label>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -128,6 +248,7 @@
 <div id="toast" class="toast"></div>
 
 <script src="lotes.js"></script>
+<script src="ficha.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

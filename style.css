@@ -60,6 +60,7 @@ main { padding: 16px; max-width: 640px; margin: 0 auto; }
 h2 { font-size: 1.15rem; margin-top: 0; }
 
 form { display: flex; flex-direction: column; gap: 14px; }
+form[hidden] { display: none; }
 
 label {
   display: flex;
@@ -119,28 +120,6 @@ textarea { resize: vertical; }
 
 .acciones > * { flex: 1; min-width: 140px; }
 
-.filtro-tipo {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.filtro-btn {
-  flex: 1;
-  padding: 8px;
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.filtro-btn.active {
-  background: var(--verde);
-  color: white;
-  border-color: var(--verde);
-}
-
 .registro-card {
   background: white;
   border: 1px solid var(--borde);
@@ -195,22 +174,12 @@ textarea { resize: vertical; }
   padding: 30px 10px;
 }
 
-.fila-input-boton {
-  display: flex;
-  gap: 8px;
-}
-
-.fila-input-boton input { flex: 1; }
-
-.btn-ubicacion {
-  background: white;
-  border: 1px solid var(--verde);
-  color: var(--verde);
-  border-radius: 8px;
-  padding: 0 10px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  cursor: pointer;
+.btn-ancho {
+  display: block;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px;
+  font-size: 1rem;
 }
 
 .ayuda-mapa {
@@ -272,11 +241,139 @@ textarea { resize: vertical; }
   vector-effect: non-scaling-stroke;
 }
 
-.mapa-info {
-  margin-top: 10px;
+/* --- Ficha del lote --- */
+.btn-volver {
+  background: none;
+  border: none;
+  color: var(--verde);
   font-weight: 600;
-  min-height: 1.2em;
+  font-size: 0.95rem;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  cursor: pointer;
 }
+
+.ficha-header h2 { margin-bottom: 2px; }
+.ficha-meta {
+  color: var(--gris);
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
+.campana-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.campana-selector label { flex: 1; min-width: 110px; }
+.campana-selector .btn-primary { margin-top: 0; flex: 0 0 auto; }
+
+.campana-actual-label {
+  font-size: 0.88rem;
+  color: var(--gris);
+  margin: 0 0 18px;
+}
+
+.chips-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chip-categoria {
+  background: white;
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.form-categoria {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.form-categoria h3 { margin-top: 0; font-size: 1rem; }
+
+.campos-cultivo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.campos-cultivo[hidden] { display: none; }
+
+.productos-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.etiqueta-bloque {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.producto-fila {
+  display: flex;
+  gap: 6px;
+}
+
+.producto-fila .producto-nombre { flex: 2; }
+.producto-fila .producto-dosis { flex: 1; min-width: 70px; }
+.producto-fila .producto-unidad { flex: 0 0 70px; }
+
+.btn-quitar-producto {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color: #b33;
+  cursor: pointer;
+  flex: 0 0 auto;
+  width: 40px;
+}
+
+.resultado-calculado {
+  background: var(--fondo);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--verde-oscuro);
+  margin: -4px 0 0;
+}
+
+.ficha-historial { margin-top: 10px; }
+
+.btn-historial-item {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.categoria-csv {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.categoria-csv h3 { margin: 0 0 10px; font-size: 1rem; }
+.categoria-csv .acciones { margin-bottom: 0; }
 
 .toast {
   position: fixed;
