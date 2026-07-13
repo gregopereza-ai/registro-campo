@@ -78,7 +78,7 @@
     <p id="campana-actual-label" class="campana-actual-label"></p>
 
     <div class="chips-categorias" id="chips-categorias">
-      <button class="chip-categoria" data-cat="malezas" type="button">🌿 Malezas</button>
+      <button class="chip-categoria" data-cat="malezas" type="button">🌿 Monitoreo</button>
       <button class="chip-categoria" data-cat="pulverizacion" type="button">💧 Pulverización</button>
       <button class="chip-categoria" data-cat="siembra" type="button">🌱 Siembra</button>
       <button class="chip-categoria" data-cat="emergencia" type="button">📏 Emergencia</button>
@@ -86,15 +86,21 @@
     </div>
 
     <form id="form-malezas" class="form-categoria" hidden>
-      <h3>Nuevo relevamiento de malezas</h3>
+      <h3>Nuevo Monitoreo</h3>
       <label>Fecha de monitoreo
         <input type="date" name="fecha" required>
       </label>
-      <label>Malezas emergidas
-        <textarea name="malezasEmergidas" rows="3" placeholder="Ej: Nabo en baja densidad, Capiquí en el 70% del lote..."></textarea>
+      <label>Malezas <span class="opcional">(opcional)</span>
+        <textarea name="malezas" rows="2" placeholder="Ej: Nabo en baja densidad, Capiquí en el 70% del lote..."></textarea>
       </label>
-      <label>Malezas sin emerger <span class="opcional">(opcional)</span>
-        <textarea name="malezasSinEmerger" rows="2"></textarea>
+      <label>Insectos <span class="opcional">(opcional)</span>
+        <textarea name="insectos" rows="2"></textarea>
+      </label>
+      <label>Enfermedades <span class="opcional">(opcional)</span>
+        <textarea name="enfermedades" rows="2"></textarea>
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2"></textarea>
       </label>
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
@@ -216,7 +222,7 @@
     <p class="ayuda-mapa">Descargá tus datos en CSV para respaldarlos o pasarlos entre tu celular y tu computadora.</p>
 
     <div class="categoria-csv">
-      <h3>Malezas</h3>
+      <h3>Monitoreo</h3>
       <div class="acciones">
         <button class="btn-secundario btn-export" data-tipo="malezas">Descargar CSV</button>
         <label class="btn-secundario btn-file">

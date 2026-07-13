@@ -1,5 +1,5 @@
 const CAMPOS_CATEGORIA = {
-  malezas: ["fecha", "lote", "cultivo", "temporada", "malezasEmergidas", "malezasSinEmerger"],
+  malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones"],
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "productosTexto", "observaciones"],
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "fertilizantesTexto"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
@@ -8,7 +8,7 @@ const CAMPOS_CATEGORIA = {
 
 const ETIQUETAS_CAMPO = {
   fecha: "Fecha", lote: "Lote", cultivo: "Cultivo", temporada: "Temporada",
-  malezasEmergidas: "Malezas emergidas", malezasSinEmerger: "Malezas sin emerger",
+  malezas: "Malezas", insectos: "Insectos", enfermedades: "Enfermedades",
   momento: "Momento", productosTexto: "Productos", observaciones: "Observaciones",
   fertilizantesTexto: "Fertilización (kg/ha)",
   variedad: "Variedad/Híbrido", hectareas: "Hectáreas", origen: "Origen", pg: "PG (%)",
@@ -19,7 +19,7 @@ const ETIQUETAS_CAMPO = {
 };
 
 const NOMBRES_CATEGORIA = {
-  malezas: "Malezas", pulverizacion: "Pulverización", siembra: "Siembra",
+  malezas: "Monitoreo", pulverizacion: "Pulverización", siembra: "Siembra",
   emergencia: "Emergencia", cosecha: "Floración/Cosecha",
 };
 

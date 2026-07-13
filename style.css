@@ -212,22 +212,28 @@ textarea { resize: vertical; }
 
 .tarjeta-acciones {
   display: flex;
-  gap: 16px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .btn-eliminar,
 .btn-editar {
-  background: none;
-  border: none;
+  background: white;
+  border-radius: 999px;
+  padding: 8px 14px;
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 4px 0;
-  text-decoration: underline;
 }
 
-.btn-eliminar { color: #b33; }
-.btn-editar { color: var(--verde); }
+.btn-editar {
+  border: 1px solid var(--verde);
+  color: var(--verde);
+}
+
+.btn-eliminar {
+  border: 1px solid #b33;
+  color: #b33;
+}
 
 .vacio {
   text-align: center;
