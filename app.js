@@ -1,21 +1,3 @@
-const STORAGE_KEY = "zogoibi-registros";
-
-function cargarRegistros() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function guardarRegistros(registros) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
-}
-
-function generarId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
-
 function mostrarToast(mensaje) {
   const toast = document.getElementById("toast");
   toast.textContent = mensaje;
@@ -27,6 +9,43 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+// --- Registros: array sincronizado en vivo con Firestore ---
+let registrosCache = [];
+let unsubscribeRegistros = null;
+
+function cargarRegistros() {
+  return registrosCache;
+}
+
+function iniciarListenerRegistros() {
+  if (unsubscribeRegistros) return;
+  unsubscribeRegistros = db.collection("registros").onSnapshot(
+    (snapshot) => {
+      registrosCache = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      onRegistrosActualizados();
+    },
+    () => mostrarToast("No se pudo sincronizar con la nube")
+  );
+}
+
+function onRegistrosActualizados() {
+  if (document.getElementById("tab-ficha").classList.contains("active") && typeof renderTimeline === "function") {
+    renderTimeline();
+  }
+}
+
+// --- Arranque de la app (recién después de iniciar sesión) ---
+function iniciarApp() {
+  iniciarListenerRegistros();
+  if (typeof iniciarListenerCampanas === "function") iniciarListenerCampanas();
+  cargarLotes()
+    .then((lotes) => {
+      lotesCache = lotes;
+      dibujarMapa();
+    })
+    .catch(() => mostrarToast("No se pudo cargar el mapa de lotes"));
 }
 
 // --- Navegación de pestañas (Mapa / Registros) ---
@@ -43,13 +62,6 @@ document.getElementById("tabs").addEventListener("click", (e) => {
 // --- Lotes (KML) ---
 let lotesCache = [];
 let ultimaUbicacion = null;
-
-cargarLotes()
-  .then((lotes) => {
-    lotesCache = lotes;
-    dibujarMapa();
-  })
-  .catch(() => mostrarToast("No se pudo cargar el mapa de lotes"));
 
 function dibujarMapa() {
   const cont = document.getElementById("mapa-contenedor");
@@ -171,19 +183,21 @@ function importarCSV(tipo, archivo) {
   const lector = new FileReader();
   lector.onload = () => {
     const filas = parseCSV(lector.result);
-    const registros = cargarRegistros();
+    const batch = db.batch();
     filas.forEach((valores) => {
-      const registro = { id: generarId(), tipo, creado: new Date().toISOString() };
+      const registro = { tipo, creado: new Date().toISOString() };
       campos.forEach((c, i) => {
         const valor = valores[i] || "";
         if (c === "productosTexto") registro.productos = textoAProductos(valor);
         else if (c === "fertilizantesTexto") registro.fertilizantes = textoAFertilizantes(valor);
         else registro[c] = valor;
       });
-      registros.push(registro);
+      batch.set(db.collection("registros").doc(), registro);
     });
-    guardarRegistros(registros);
-    mostrarToast(`${filas.length} registros importados`);
+    batch
+      .commit()
+      .then(() => mostrarToast(`${filas.length} registros importados`))
+      .catch(() => mostrarToast("No se pudo importar (revisá tu conexión)"));
   };
   lector.readAsText(archivo, "utf-8");
 }

@@ -23,6 +23,58 @@ header {
   color: white;
   padding: 16px;
   text-align: center;
+  position: relative;
+}
+
+.btn-salir {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+#pantalla-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#pantalla-login[hidden] { display: none; }
+
+.login-caja {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-caja h1 {
+  color: var(--verde);
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+}
+
+.login-caja form {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.login-error {
+  color: #b33;
+  font-size: 0.85rem;
+  margin: 0;
+  min-height: 1.1em;
 }
 
 header h1 { margin: 0; font-size: 1.4rem; }

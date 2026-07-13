@@ -1,5 +1,3 @@
-const CAMPANAS_KEY = "zogoibi-campanas-lote";
-
 const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezasEmergidas", "malezasSinEmerger"],
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "productosTexto", "observaciones"],
@@ -27,22 +25,31 @@ const NOMBRES_CATEGORIA = {
 
 let loteActual = null;
 
-// --- Campaña activa por lote ---
-function cargarCampanasLote() {
-  try {
-    return JSON.parse(localStorage.getItem(CAMPANAS_KEY)) || {};
-  } catch {
-    return {};
-  }
+// --- Campaña activa por lote: sincronizada en vivo con Firestore ---
+let campanasLoteCache = {};
+let unsubscribeCampanas = null;
+
+function iniciarListenerCampanas() {
+  if (unsubscribeCampanas) return;
+  unsubscribeCampanas = db.collection("campanasLote").onSnapshot(
+    (snapshot) => {
+      const nuevoMapa = {};
+      snapshot.forEach((doc) => (nuevoMapa[doc.id] = doc.data()));
+      campanasLoteCache = nuevoMapa;
+      onCampanasActualizadas();
+    },
+    () => mostrarToast("No se pudo sincronizar las campañas con la nube")
+  );
 }
 
-function guardarCampanasLote(mapa) {
-  localStorage.setItem(CAMPANAS_KEY, JSON.stringify(mapa));
+function onCampanasActualizadas() {
+  if (!loteActual || !document.getElementById("tab-ficha").classList.contains("active")) return;
+  actualizarEtiquetaCampana();
+  renderTimeline();
 }
 
 function campanaActivaDe(lote) {
-  const mapa = cargarCampanasLote();
-  return mapa[lote] || null;
+  return campanasLoteCache[lote] || null;
 }
 
 // --- Productos de pulverización (serialización simple para CSV) ---
@@ -194,12 +201,15 @@ document.getElementById("btn-guardar-campana").addEventListener("click", () => {
     mostrarToast("Ingresá la temporada (ej: 26/27)");
     return;
   }
-  const mapa = cargarCampanasLote();
-  mapa[loteActual] = { cultivo, temporada };
-  guardarCampanasLote(mapa);
-  actualizarEtiquetaCampana();
-  renderTimeline();
-  mostrarToast("Campaña guardada");
+  db.collection("campanasLote")
+    .doc(loteActual)
+    .set({ cultivo, temporada })
+    .then(() => {
+      actualizarEtiquetaCampana();
+      renderTimeline();
+      mostrarToast("Campaña guardada");
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 document.getElementById("campana-cultivo").addEventListener("change", actualizarCamposSiembraSegunCultivo);
@@ -308,9 +318,8 @@ function requiereCampana() {
 
 function guardarRegistroCategoria(tipo, datosExtra) {
   const campana = requiereCampana();
-  if (!campana) return false;
+  if (!campana) return null;
   const registro = {
-    id: generarId(),
     tipo,
     lote: loteActual,
     cultivo: campana.cultivo,
@@ -318,21 +327,23 @@ function guardarRegistroCategoria(tipo, datosExtra) {
     creado: new Date().toISOString(),
     ...datosExtra,
   };
-  const registros = cargarRegistros();
-  registros.push(registro);
-  guardarRegistros(registros);
-  return true;
+  return db.collection("registros").add(registro);
 }
 
 document.getElementById("form-malezas").addEventListener("submit", (e) => {
   e.preventDefault();
-  const datos = Object.fromEntries(new FormData(e.target).entries());
-  if (guardarRegistroCategoria("malezas", datos)) {
-    e.target.reset();
-    e.target.hidden = true;
-    mostrarToast("Malezas guardadas");
-    renderTimeline();
-  }
+  const form = e.target;
+  const datos = Object.fromEntries(new FormData(form).entries());
+  const promesa = guardarRegistroCategoria("malezas", datos);
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      form.reset();
+      form.hidden = true;
+      mostrarToast("Malezas guardadas");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 document.getElementById("form-pulverizacion").addEventListener("submit", (e) => {
@@ -346,13 +357,17 @@ document.getElementById("form-pulverizacion").addEventListener("submit", (e) => 
       unidad: fila.querySelector(".producto-unidad").value,
     }))
     .filter((p) => p.nombre);
-  if (guardarRegistroCategoria("pulverizacion", { ...datos, productos })) {
-    form.reset();
-    document.getElementById("productos-lista").innerHTML = "";
-    form.hidden = true;
-    mostrarToast("Pulverización guardada");
-    renderTimeline();
-  }
+  const promesa = guardarRegistroCategoria("pulverizacion", { ...datos, productos });
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      form.reset();
+      document.getElementById("productos-lista").innerHTML = "";
+      form.hidden = true;
+      mostrarToast("Pulverización guardada");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 document.getElementById("form-siembra").addEventListener("submit", (e) => {
@@ -367,14 +382,18 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
       dosis: fila.querySelector(".fertilizante-dosis").value,
     }))
     .filter((f) => f.nombre && f.dosis);
-  if (guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables, fertilizantes })) {
-    form.reset();
-    form.hidden = true;
-    document.getElementById("siembra-resultado").textContent = "";
-    document.getElementById("fertilizantes-lista").innerHTML = "";
-    mostrarToast("Siembra guardada");
-    renderTimeline();
-  }
+  const promesa = guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables, fertilizantes });
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      form.reset();
+      form.hidden = true;
+      document.getElementById("siembra-resultado").textContent = "";
+      document.getElementById("fertilizantes-lista").innerHTML = "";
+      mostrarToast("Siembra guardada");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 document.getElementById("form-emergencia").addEventListener("submit", (e) => {
@@ -386,24 +405,33 @@ document.getElementById("form-emergencia").addEventListener("submit", (e) => {
   if (siembra && siembra.semillasHaViables && datos.plantasM2) {
     coeficienteLogro = (((parseFloat(datos.plantasM2) * 10000) / siembra.semillasHaViables) * 100).toFixed(1);
   }
-  if (guardarRegistroCategoria("emergencia", { ...datos, coeficienteLogro })) {
-    form.reset();
-    form.hidden = true;
-    document.getElementById("emergencia-resultado").textContent = "";
-    mostrarToast("Emergencia guardada");
-    renderTimeline();
-  }
+  const promesa = guardarRegistroCategoria("emergencia", { ...datos, coeficienteLogro });
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      form.reset();
+      form.hidden = true;
+      document.getElementById("emergencia-resultado").textContent = "";
+      mostrarToast("Emergencia guardada");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 document.getElementById("form-cosecha").addEventListener("submit", (e) => {
   e.preventDefault();
-  const datos = Object.fromEntries(new FormData(e.target).entries());
-  if (guardarRegistroCategoria("cosecha", datos)) {
-    e.target.reset();
-    e.target.hidden = true;
-    mostrarToast("Cosecha guardada");
-    renderTimeline();
-  }
+  const form = e.target;
+  const datos = Object.fromEntries(new FormData(form).entries());
+  const promesa = guardarRegistroCategoria("cosecha", datos);
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      form.reset();
+      form.hidden = true;
+      mostrarToast("Cosecha guardada");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
 // --- Línea de tiempo ---
@@ -463,9 +491,11 @@ document.getElementById("ficha-timeline").addEventListener("click", (e) => {
   const btn = e.target.closest(".btn-eliminar");
   if (!btn) return;
   if (!confirm("¿Eliminar este registro?")) return;
-  const registros = cargarRegistros().filter((r) => r.id !== btn.dataset.id);
-  guardarRegistros(registros);
-  renderTimeline();
+  db.collection("registros")
+    .doc(btn.dataset.id)
+    .delete()
+    .then(() => renderTimeline())
+    .catch(() => mostrarToast("No se pudo eliminar (revisá tu conexión)"));
 });
 
 // --- Historial de campañas anteriores ---
