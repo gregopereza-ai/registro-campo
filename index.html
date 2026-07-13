@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de Campo — Zogoibi</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6d3c">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Registro de Campo</h1>
+  <p class="subtitulo">Establecimiento Zogoibi S.A.</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="recorrida">Recorrida</button>
+  <button class="tab-btn" data-tab="siembra">Siembra</button>
+  <button class="tab-btn" data-tab="mapa">Mapa</button>
+  <button class="tab-btn" data-tab="registros">Ver registros</button>
+</nav>
+
+<main>
+
+  <section id="tab-recorrida" class="tab-panel active">
+    <h2>Nueva Recorrida de Barbecho</h2>
+    <form id="form-recorrida">
+      <label>Fecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Lote
+        <div class="fila-input-boton">
+          <input type="text" name="lote" placeholder="Ej: 29 sur sup" required>
+          <button type="button" class="btn-ubicacion" data-form="recorrida">📍 Usar mi ubicación</button>
+        </div>
+      </label>
+      <label>Hectáreas
+        <input type="number" name="hectareas" min="0" step="0.1" placeholder="Ej: 40">
+      </label>
+      <label>Malezas emergidas
+        <textarea name="malezasEmergidas" rows="3" placeholder="Ej: Nabo en baja densidad, Capiquí en el 70% del lote..."></textarea>
+      </label>
+      <label>Malezas sin emerger <span class="opcional">(opcional)</span>
+        <textarea name="malezasSinEmerger" rows="2"></textarea>
+      </label>
+      <label>Pulverización planificada <span class="opcional">(opcional)</span>
+        <textarea name="pulverizacion" rows="2" placeholder="Ej: 17/06 — Sulfosato 1lt, Cletodim 0,5lt..."></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar Recorrida</button>
+    </form>
+  </section>
+
+  <section id="tab-siembra" class="tab-panel">
+    <h2>Nueva Siembra</h2>
+    <form id="form-siembra">
+      <label>Fecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Lote
+        <div class="fila-input-boton">
+          <input type="text" name="lote" placeholder="Ej: 35 sup" required>
+          <button type="button" class="btn-ubicacion" data-form="siembra">📍 Usar mi ubicación</button>
+        </div>
+      </label>
+      <label>Hectáreas
+        <input type="number" name="hectareas" min="0" step="0.1">
+      </label>
+      <label>Variedad de semilla
+        <input type="text" name="variedad" placeholder="Ej: Baguette 801">
+      </label>
+      <label>Origen
+        <select name="origen">
+          <option value="">— Seleccionar —</option>
+          <option value="Propia">Propia</option>
+          <option value="Comprada">Comprada</option>
+        </select>
+      </label>
+      <label>Densidad de siembra (kg/ha)
+        <input type="number" name="densidad" min="0" step="0.1">
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar Siembra</button>
+    </form>
+  </section>
+
+  <section id="tab-mapa" class="tab-panel">
+    <h2>Mapa de lotes</h2>
+    <p class="ayuda-mapa">Tocá un lote para ver su nombre y hectáreas.</p>
+    <div class="leyenda-mapa">
+      <span class="leyenda-item"><span class="leyenda-color color-profundo"></span> Profundo</span>
+      <span class="leyenda-item"><span class="leyenda-color color-superficial"></span> Superficial</span>
+    </div>
+    <div id="mapa-contenedor"></div>
+    <p id="mapa-info" class="mapa-info"></p>
+  </section>
+
+  <section id="tab-registros" class="tab-panel">
+    <h2>Registros guardados</h2>
+    <div class="filtro-tipo">
+      <button class="filtro-btn active" data-filtro="todos">Todos</button>
+      <button class="filtro-btn" data-filtro="recorrida">Recorridas</button>
+      <button class="filtro-btn" data-filtro="siembra">Siembras</button>
+    </div>
+
+    <div class="acciones">
+      <button id="btn-export-recorrida" class="btn-secundario">Descargar CSV — Recorridas</button>
+      <button id="btn-export-siembra" class="btn-secundario">Descargar CSV — Siembras</button>
+    </div>
+    <div class="acciones">
+      <label class="btn-secundario btn-file">
+        Importar CSV — Recorridas
+        <input type="file" id="import-recorrida" accept=".csv" hidden>
+      </label>
+      <label class="btn-secundario btn-file">
+        Importar CSV — Siembras
+        <input type="file" id="import-siembra" accept=".csv" hidden>
+      </label>
+    </div>
+
+    <div id="lista-registros"></div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="lotes.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
