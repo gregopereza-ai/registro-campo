@@ -50,7 +50,15 @@
       <span class="leyenda-item"><span class="leyenda-color color-superficial"></span> Superficial</span>
     </div>
     <button id="btn-ir-a-mi-lote" class="btn-secundario btn-ancho">📍 Ir a mi lote</button>
-    <div id="mapa-contenedor"></div>
+    <div id="mapa-wrapper">
+      <div id="mapa-contenedor"></div>
+      <div class="mapa-controles">
+        <button type="button" id="btn-zoom-in" aria-label="Acercar">+</button>
+        <button type="button" id="btn-zoom-out" aria-label="Alejar">−</button>
+      </div>
+      <button type="button" id="btn-zoom-reset" class="btn-secundario btn-restablecer">Restablecer vista</button>
+    </div>
+    <p class="ayuda-mapa">Pellizcá o girá la rueda del mouse sobre el mapa para hacer zoom, y arrastrá para moverte.</p>
   </section>
 
   <section id="tab-ficha" class="tab-panel">
