@@ -134,7 +134,7 @@ function abrirFicha(nombreLote) {
   const lote = lotesCache.find((l) => l.nombre === nombreLote);
   document.getElementById("ficha-nombre").textContent = nombreLote;
   document.getElementById("ficha-meta").textContent = lote
-    ? `${lote.ambiente} — ${lote.hectareas ? lote.hectareas.toFixed(1) + " ha" : "sin datos de ha"}`
+    ? `${lote.ambiente} — ${lote.hectareasTotales ? lote.hectareasTotales.toFixed(1) + " ha" : "sin datos de ha"}`
     : "";
 
   document.querySelectorAll(".form-categoria").forEach((f) => {

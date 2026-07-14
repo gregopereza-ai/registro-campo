@@ -49,6 +49,16 @@ async function cargarLotes(url = "lotes.kml") {
     });
   });
 
+  const totalesPorNombre = {};
+  lotes.forEach((l) => {
+    if (l.hectareas != null) {
+      totalesPorNombre[l.nombre] = (totalesPorNombre[l.nombre] || 0) + l.hectareas;
+    }
+  });
+  lotes.forEach((l) => {
+    l.hectareasTotales = totalesPorNombre[l.nombre] ?? null;
+  });
+
   return lotes;
 }
 
