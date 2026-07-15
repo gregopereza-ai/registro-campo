@@ -1,4 +1,4 @@
-const CACHE_NAME = "zogoibi-registro-v10";
+const CACHE_NAME = "zogoibi-registro-v11";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -10,7 +10,7 @@ const ARCHIVOS = [
   "./lotes.js",
   "./lotes.kml",
   "./manifest.json",
-  "./icon.svg",
+  "./icon.png",
 ];
 
 self.addEventListener("install", (event) => {
