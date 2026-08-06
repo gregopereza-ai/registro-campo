@@ -40,6 +40,7 @@ function onRegistrosActualizados() {
 function iniciarApp() {
   iniciarListenerRegistros();
   if (typeof iniciarListenerCampanas === "function") iniciarListenerCampanas();
+  if (typeof iniciarListenerClima === "function") iniciarListenerClima();
   cargarLotes()
     .then((lotes) => {
       lotesCache = lotes;
@@ -49,7 +50,19 @@ function iniciarApp() {
     .catch(() => mostrarToast("No se pudo cargar el mapa de lotes"));
 }
 
-// --- Navegación de pestañas (Mapa / Registros) ---
+// --- Menú (☰): panel lateral con todas las secciones ---
+function abrirMenu() {
+  document.getElementById("tabs").hidden = false;
+  document.getElementById("menu-backdrop").hidden = false;
+}
+function cerrarMenu() {
+  document.getElementById("tabs").hidden = true;
+  document.getElementById("menu-backdrop").hidden = true;
+}
+document.getElementById("btn-menu").addEventListener("click", abrirMenu);
+document.getElementById("menu-backdrop").addEventListener("click", cerrarMenu);
+
+// --- Navegación de pestañas (Mapa / Clima / Registros) ---
 document.getElementById("tabs").addEventListener("click", (e) => {
   const btn = e.target.closest(".tab-btn");
   if (!btn) return;
@@ -58,6 +71,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   btn.classList.add("active");
   document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
   if (btn.dataset.tab === "mapa") dibujarMapa();
+  cerrarMenu();
 });
 
 // --- Lotes (KML) ---

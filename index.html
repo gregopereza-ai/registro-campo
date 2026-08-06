@@ -32,14 +32,17 @@
 <div id="app-contenido" hidden>
 
 <header>
+  <button id="btn-menu" class="btn-menu" type="button" aria-label="Abrir menú">☰</button>
   <h1>Registro de Campo</h1>
   <p class="subtitulo">Establecimiento Zogoibi S.A.</p>
   <button id="btn-salir" class="btn-salir" type="button">Salir</button>
 </header>
 
-<nav class="tabs" id="tabs">
-  <button class="tab-btn active" data-tab="mapa">Mapa</button>
-  <button class="tab-btn" data-tab="registros">Registros</button>
+<div id="menu-backdrop" class="menu-backdrop" hidden></div>
+<nav class="tabs" id="tabs" hidden>
+  <button class="tab-btn active" data-tab="mapa">🗺️ Mapa</button>
+  <button class="tab-btn" data-tab="clima">🌦️ Clima</button>
+  <button class="tab-btn" data-tab="registros">📄 Registros</button>
 </nav>
 
 <main>
@@ -236,6 +239,62 @@
     <div id="ficha-historial" class="ficha-historial" hidden></div>
   </section>
 
+  <section id="tab-clima" class="tab-panel">
+    <h2>Clima</h2>
+    <p class="ayuda-mapa">Registro general para todo el campo — no hace falta elegir lote.</p>
+
+    <div class="resumen-lluvias">
+      <div class="resumen-item">
+        <span class="resumen-valor" id="lluvia-mes">0 mm</span>
+        <span class="resumen-etiqueta">Lluvia este mes</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="lluvia-anio">0 mm</span>
+        <span class="resumen-etiqueta">Lluvia este año</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="heladas-anio">0</span>
+        <span class="resumen-etiqueta">Heladas este año</span>
+      </div>
+    </div>
+
+    <div class="chips-categorias" id="chips-clima">
+      <button class="chip-categoria" data-cat="lluvia" type="button">🌧️ Lluvia</button>
+      <button class="chip-categoria" data-cat="helada" type="button">❄️ Helada</button>
+    </div>
+
+    <form id="form-lluvia" class="form-categoria" hidden>
+      <h3>Nueva lluvia</h3>
+      <label>Fecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Milímetros (mm)
+        <input type="number" name="mm" min="0" step="0.1" required>
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2" placeholder="Ej: con granizo, con viento fuerte"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <form id="form-helada" class="form-categoria" hidden>
+      <h3>Nueva helada</h3>
+      <label>Fecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Temperatura mínima (°C)
+        <input type="number" name="tempMin" step="0.1" required>
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <h3>Historial</h3>
+    <div id="lista-clima"></div>
+  </section>
+
   <section id="tab-registros" class="tab-panel">
     <h2>Reporte de lote</h2>
     <p class="ayuda-mapa">Elegí un lote y una campaña para descargar su avance completo en PDF.</p>
@@ -266,6 +325,7 @@
 <script src="auth.js"></script>
 <script src="lotes.js"></script>
 <script src="ficha.js"></script>
+<script src="clima.js"></script>
 <script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>
