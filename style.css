@@ -488,6 +488,28 @@ textarea { resize: vertical; }
 .categoria-csv h3 { margin: 0 0 10px; font-size: 1rem; }
 .categoria-csv .acciones { margin-bottom: 0; }
 
+.reporte-bloque {
+  border-color: var(--verde);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reporte-bloque label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.reporte-bloque select:disabled {
+  color: var(--gris);
+  background: var(--fondo);
+}
+
+#reporte-estado {
+  margin: 0;
+  min-height: 1.1em;
+}
+
 .toast {
   position: fixed;
   bottom: 20px;

@@ -44,6 +44,7 @@ function iniciarApp() {
     .then((lotes) => {
       lotesCache = lotes;
       dibujarMapa();
+      if (typeof poblarSelectorLotes === "function") poblarSelectorLotes();
     })
     .catch(() => mostrarToast("No se pudo cargar el mapa de lotes"));
 }

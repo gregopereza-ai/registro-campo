@@ -1,16 +1,18 @@
-const CACHE_NAME = "zogoibi-registro-v11";
+const CACHE_NAME = "zogoibi-registro-v13";
 const ARCHIVOS = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./ficha.js",
+  "./reporte.js",
   "./auth.js",
   "./firebase-config.js",
   "./lotes.js",
   "./lotes.kml",
   "./manifest.json",
   "./icon.png",
+  "./jspdf.umd.min.js",
 ];
 
 self.addEventListener("install", (event) => {

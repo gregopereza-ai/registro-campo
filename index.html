@@ -228,6 +228,19 @@
 
   <section id="tab-registros" class="tab-panel">
     <h2>Exportar / Importar datos</h2>
+
+    <div class="categoria-csv reporte-bloque">
+      <h3>Reporte de avance de lote (PDF)</h3>
+      <label>Lote
+        <select id="reporte-lote"></select>
+      </label>
+      <label>Campaña
+        <select id="reporte-campana"></select>
+      </label>
+      <button type="button" id="btn-reporte-pdf" class="btn-primary">Descargar reporte PDF</button>
+      <p id="reporte-estado" class="ayuda-mapa"></p>
+    </div>
+
     <p class="ayuda-mapa">Descargá tus datos en CSV para respaldarlos o pasarlos entre tu celular y tu computadora.</p>
 
     <div class="categoria-csv">
@@ -295,10 +308,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 <script src="lotes.js"></script>
 <script src="ficha.js"></script>
+<script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
