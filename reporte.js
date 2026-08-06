@@ -79,7 +79,7 @@ function detalleTextoPDF(r) {
   }
   const campos = CAMPOS_CATEGORIA[r.tipo] || [];
   const lineas = campos
-    .filter((c) => !["fecha", "lote", "cultivo", "temporada", "fertilizantesTexto"].includes(c) && r[c])
+    .filter((c) => !["fecha", "lote", "cultivo", "temporada"].includes(c) && r[c])
     .map((c) => {
       let valor = r[c];
       if (c === "semillasHaBruto" || c === "semillasHaViables") valor = Math.round(valor).toLocaleString("es-AR");

@@ -1,7 +1,7 @@
 const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones"],
-  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "productosTexto", "observaciones"],
-  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "fertilizantesTexto"],
+  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "observaciones"],
+  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
   cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "rendimientoKgHa", "humedad"],
 };
@@ -9,8 +9,7 @@ const CAMPOS_CATEGORIA = {
 const ETIQUETAS_CAMPO = {
   fecha: "Fecha", lote: "Lote", cultivo: "Cultivo", temporada: "Temporada",
   malezas: "Malezas", insectos: "Insectos", enfermedades: "Enfermedades",
-  momento: "Momento", productosTexto: "Productos", observaciones: "Observaciones",
-  fertilizantesTexto: "Fertilización (kg/ha)",
+  momento: "Momento", observaciones: "Observaciones",
   variedad: "Variedad/Híbrido", hectareas: "Hectáreas", origen: "Origen", pg: "PG (%)",
   dosisKgHa: "Dosis (kg/ha)", pmg: "PMG (g)", semillasPorMetro: "Semillas/metro", distanciaCm: "Distancia (cm)",
   semillasHaBruto: "Semillas/ha (bruto)", semillasHaViables: "Semillas/ha (viables)",
@@ -52,19 +51,6 @@ function campanaActivaDe(lote) {
   return campanasLoteCache[lote] || null;
 }
 
-// --- Productos de pulverización (serialización simple para CSV) ---
-function productosATexto(productos) {
-  return (productos || []).map((p) => `${p.nombre}|${p.dosis}|${p.unidad}`).join(";");
-}
-
-function textoAProductos(texto) {
-  if (!texto) return [];
-  return texto.split(";").filter(Boolean).map((parte) => {
-    const [nombre, dosis, unidad] = parte.split("|");
-    return { nombre: nombre || "", dosis: dosis || "", unidad: unidad || "" };
-  });
-}
-
 function agregarFilaProducto(valores = {}) {
   const cont = document.getElementById("productos-lista");
   const fila = document.createElement("div");
@@ -90,19 +76,6 @@ document.getElementById("productos-lista").addEventListener("click", (e) => {
   if (!btn) return;
   btn.closest(".producto-fila").remove();
 });
-
-// --- Fertilizantes de Siembra (misma serialización simple, sin unidad porque siempre es kg/ha) ---
-function fertilizantesATexto(fertilizantes) {
-  return (fertilizantes || []).map((f) => `${f.nombre}|${f.dosis}`).join(";");
-}
-
-function textoAFertilizantes(texto) {
-  if (!texto) return [];
-  return texto.split(";").filter(Boolean).map((parte) => {
-    const [nombre, dosis] = parte.split("|");
-    return { nombre: nombre || "", dosis: dosis || "" };
-  });
-}
 
 function agregarFilaFertilizante(valores = {}) {
   const cont = document.getElementById("fertilizantes-lista");
@@ -539,7 +512,7 @@ function detalleParaMostrar(r) {
   }
   const campos = CAMPOS_CATEGORIA[r.tipo] || [];
   let html = campos
-    .filter((c) => !["fecha", "lote", "cultivo", "temporada", "fertilizantesTexto"].includes(c) && r[c])
+    .filter((c) => !["fecha", "lote", "cultivo", "temporada"].includes(c) && r[c])
     .map((c) => `<dt>${ETIQUETAS_CAMPO[c] || c}</dt><dd>${escapeHtml(String(r[c]))}</dd>`)
     .join("");
   if (r.tipo === "siembra") {

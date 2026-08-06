@@ -227,10 +227,10 @@
   </section>
 
   <section id="tab-registros" class="tab-panel">
-    <h2>Exportar / Importar datos</h2>
+    <h2>Reporte de lote</h2>
+    <p class="ayuda-mapa">Elegí un lote y una campaña para descargar su avance completo en PDF.</p>
 
     <div class="categoria-csv reporte-bloque">
-      <h3>Reporte de avance de lote (PDF)</h3>
       <label>Lote
         <select id="reporte-lote"></select>
       </label>
@@ -239,63 +239,6 @@
       </label>
       <button type="button" id="btn-reporte-pdf" class="btn-primary">Descargar reporte PDF</button>
       <p id="reporte-estado" class="ayuda-mapa"></p>
-    </div>
-
-    <p class="ayuda-mapa">Descargá tus datos en CSV para respaldarlos o pasarlos entre tu celular y tu computadora.</p>
-
-    <div class="categoria-csv">
-      <h3>Monitoreo</h3>
-      <div class="acciones">
-        <button class="btn-secundario btn-export" data-tipo="malezas">Descargar CSV</button>
-        <label class="btn-secundario btn-file">
-          Importar CSV
-          <input type="file" class="input-import" data-tipo="malezas" accept=".csv" hidden>
-        </label>
-      </div>
-    </div>
-
-    <div class="categoria-csv">
-      <h3>Pulverizaciones</h3>
-      <div class="acciones">
-        <button class="btn-secundario btn-export" data-tipo="pulverizacion">Descargar CSV</button>
-        <label class="btn-secundario btn-file">
-          Importar CSV
-          <input type="file" class="input-import" data-tipo="pulverizacion" accept=".csv" hidden>
-        </label>
-      </div>
-    </div>
-
-    <div class="categoria-csv">
-      <h3>Siembra</h3>
-      <div class="acciones">
-        <button class="btn-secundario btn-export" data-tipo="siembra">Descargar CSV</button>
-        <label class="btn-secundario btn-file">
-          Importar CSV
-          <input type="file" class="input-import" data-tipo="siembra" accept=".csv" hidden>
-        </label>
-      </div>
-    </div>
-
-    <div class="categoria-csv">
-      <h3>Emergencia</h3>
-      <div class="acciones">
-        <button class="btn-secundario btn-export" data-tipo="emergencia">Descargar CSV</button>
-        <label class="btn-secundario btn-file">
-          Importar CSV
-          <input type="file" class="input-import" data-tipo="emergencia" accept=".csv" hidden>
-        </label>
-      </div>
-    </div>
-
-    <div class="categoria-csv">
-      <h3>Floración y Cosecha</h3>
-      <div class="acciones">
-        <button class="btn-secundario btn-export" data-tipo="cosecha">Descargar CSV</button>
-        <label class="btn-secundario btn-file">
-          Importar CSV
-          <input type="file" class="input-import" data-tipo="cosecha" accept=".csv" hidden>
-        </label>
-      </div>
     </div>
   </section>
 
