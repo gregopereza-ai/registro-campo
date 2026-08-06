@@ -111,6 +111,16 @@
       <label>Observaciones <span class="opcional">(opcional)</span>
         <textarea name="observaciones" rows="2"></textarea>
       </label>
+      <div class="foto-bloque">
+        <span class="etiqueta-bloque">Foto <span class="opcional">(opcional)</span></span>
+        <input type="file" id="malezas-foto-input" accept="image/*" capture="environment" hidden>
+        <button type="button" id="btn-elegir-foto" class="btn-secundario">📷 Agregar foto</button>
+        <p id="malezas-foto-estado" class="ayuda-mapa"></p>
+        <div id="malezas-foto-preview" class="foto-preview" hidden>
+          <img id="malezas-foto-img" alt="Foto del monitoreo">
+          <button type="button" id="btn-quitar-foto" class="btn-secundario">✕ Quitar foto</button>
+        </div>
+      </div>
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
 

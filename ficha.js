@@ -97,6 +97,77 @@ document.getElementById("fertilizantes-lista").addEventListener("click", (e) => 
   btn.closest(".producto-fila").remove();
 });
 
+// --- Foto de Monitoreo: se comprime en el celular antes de guardarla ---
+let fotoActual = null; // dataURL (string) de la foto lista para guardar, o null
+
+function comprimirImagen(archivo) {
+  return new Promise((resolve, reject) => {
+    const lector = new FileReader();
+    lector.onerror = () => reject(new Error("No se pudo leer la imagen"));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Archivo de imagen inválido"));
+      img.onload = () => {
+        const maxLado = 1000;
+        let { width, height } = img;
+        if (width > height && width > maxLado) {
+          height = Math.round((height * maxLado) / width);
+          width = maxLado;
+        } else if (height > maxLado) {
+          width = Math.round((width * maxLado) / height);
+          height = maxLado;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.6));
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+function mostrarPreviewFoto(dataUrl) {
+  fotoActual = dataUrl;
+  const preview = document.getElementById("malezas-foto-preview");
+  const img = document.getElementById("malezas-foto-img");
+  const boton = document.getElementById("btn-elegir-foto");
+  if (dataUrl) {
+    img.src = dataUrl;
+    preview.hidden = false;
+    boton.hidden = true;
+  } else {
+    img.src = "";
+    preview.hidden = true;
+    boton.hidden = false;
+  }
+}
+
+document.getElementById("btn-elegir-foto").addEventListener("click", () => {
+  document.getElementById("malezas-foto-input").click();
+});
+
+document.getElementById("malezas-foto-input").addEventListener("change", (e) => {
+  const archivo = e.target.files[0];
+  e.target.value = "";
+  if (!archivo) return;
+  const estado = document.getElementById("malezas-foto-estado");
+  estado.textContent = "Preparando foto...";
+  comprimirImagen(archivo)
+    .then((dataUrl) => {
+      estado.textContent = "";
+      mostrarPreviewFoto(dataUrl);
+    })
+    .catch(() => {
+      estado.textContent = "";
+      mostrarToast("No se pudo procesar la foto");
+    });
+});
+
+document.getElementById("btn-quitar-foto").addEventListener("click", () => mostrarPreviewFoto(null));
+
 // --- Abrir / cerrar Ficha del lote ---
 function abrirFicha(nombreLote) {
   loteActual = nombreLote;
@@ -119,6 +190,7 @@ function abrirFicha(nombreLote) {
   document.getElementById("siembra-resultado").textContent = "";
   document.getElementById("emergencia-resultado").textContent = "";
   document.getElementById("ficha-historial").hidden = true;
+  mostrarPreviewFoto(null);
 
   const campana = campanaActivaDe(nombreLote);
   document.getElementById("campana-cultivo").value = campana ? campana.cultivo : "Trigo";
@@ -213,6 +285,7 @@ document.getElementById("chips-categorias").addEventListener("click", (e) => {
   form.hidden = estabaAbierto;
   if (form.id === "form-pulverizacion") document.getElementById("productos-lista").innerHTML = "";
   if (form.id === "form-siembra") document.getElementById("fertilizantes-lista").innerHTML = "";
+  if (form.id === "form-malezas") mostrarPreviewFoto(null);
   salirModoEdicion(form);
   if (!form.hidden) {
     const fechaInput = form.querySelector('[name="fecha"]');
@@ -245,6 +318,9 @@ function editarRegistro(id) {
     if (form.elements[campo]) form.elements[campo].value = registro[campo];
   });
 
+  if (registro.tipo === "malezas") {
+    mostrarPreviewFoto(registro.foto || null);
+  }
   if (registro.tipo === "pulverizacion") {
     (registro.productos || []).forEach((p) => agregarFilaProducto(p));
     if (!document.getElementById("productos-lista").children.length) agregarFilaProducto();
@@ -362,11 +438,13 @@ document.getElementById("form-malezas").addEventListener("submit", (e) => {
   const form = e.target;
   const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
+  datos.foto = fotoActual || "";
   const promesa = guardarRegistroCategoria("malezas", datos);
   if (!promesa) return;
   promesa
     .then(() => {
       salirModoEdicion(form);
+      mostrarPreviewFoto(null);
       form.hidden = true;
       mostrarToast(editando ? "Malezas actualizadas" : "Malezas guardadas");
       renderTimeline();
@@ -519,10 +597,19 @@ function detalleParaMostrar(r) {
     const fertTexto = (r.fertilizantes || []).map((f) => `${f.nombre} — ${f.dosis} kg/ha`).join("; ");
     if (fertTexto) html += `<dt>Fertilización</dt><dd>${escapeHtml(fertTexto)}</dd>`;
   }
+  if (r.tipo === "malezas" && r.foto) {
+    html += `<dd><img src="${r.foto}" class="foto-timeline" alt="Foto del monitoreo"></dd>`;
+  }
   return html;
 }
 
 document.getElementById("ficha-timeline").addEventListener("click", (e) => {
+  const foto = e.target.closest(".foto-timeline");
+  if (foto) {
+    const ventana = window.open();
+    if (ventana) ventana.document.write(`<img src="${foto.src}" style="max-width:100%">`);
+    return;
+  }
   const btnEditar = e.target.closest(".btn-editar");
   if (btnEditar) {
     editarRegistro(btnEditar.dataset.id);

@@ -225,6 +225,20 @@ function generarReportePDF(lote, cultivo, temporada) {
       doc.text(linea, colXTexto, y);
       y += 4.6;
     });
+
+    if (r.tipo === "malezas" && r.foto) {
+      try {
+        const props = doc.getImageProperties(r.foto);
+        const anchoImg = Math.min(anchoTexto, 60);
+        const altoImg = (props.height / props.width) * anchoImg;
+        saltoDePaginaSiHaceFalta(altoImg + 4);
+        doc.addImage(r.foto, "JPEG", colXTexto, y, anchoImg, altoImg);
+        y += altoImg + 4;
+      } catch (err) {
+        // si la imagen no se puede leer, se omite sin cortar el reporte
+      }
+    }
+
     y += 4;
   });
 

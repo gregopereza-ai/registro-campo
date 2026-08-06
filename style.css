@@ -468,6 +468,40 @@ textarea { resize: vertical; }
   margin: -4px 0 0;
 }
 
+.foto-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.foto-preview {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+}
+.foto-preview[hidden] { display: none; }
+
+.foto-preview img {
+  display: block;
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+}
+
+.foto-preview .btn-secundario {
+  margin-top: 6px;
+}
+
+.registro-card .foto-timeline {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
 .ficha-historial { margin-top: 10px; }
 
 .btn-historial-item {
