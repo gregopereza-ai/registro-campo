@@ -801,6 +801,16 @@ textarea { resize: vertical; }
   font-size: 0.95rem;
 }
 
+.resumen-cereales-titulo {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--verde-oscuro);
+  text-transform: uppercase;
+  margin: 12px 0 4px;
+}
+
+#poscosecha-resumen-cereales > .resumen-cereales-titulo:first-child { margin-top: 0; }
+
 .resumen-cereales {
   background: white;
   border: 1px solid var(--borde);

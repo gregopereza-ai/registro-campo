@@ -85,15 +85,21 @@ function restanteSilobolsa(b) {
   return Math.max(0, Math.round(((parseFloat(b.toneladas) || 0) - salidas) * 10) / 10);
 }
 
-// Stock disponible por cereal: suma silos + silobolsas activas de Acopio.
-// La semilla propia NO se suma acá — es para sembrar, no está disponible para venta.
+// Stock disponible por cereal, separado por planta de silos y silobolsa (solo Acopio).
+// La semilla propia NO se suma en ningún lado acá — es para sembrar, no está disponible para venta.
 function calcularStockPorCultivo() {
-  const stock = {};
-  CULTIVOS_POSCOSECHA.forEach((c) => (stock[c] = 0));
+  const stockSilos = {};
+  const stockBolsa = {};
+  CULTIVOS_POSCOSECHA.forEach((c) => {
+    stockSilos[c] = 0;
+    stockBolsa[c] = 0;
+  });
+
   SILOS.forEach((s) => {
     const { toneladas, cultivo } = calcularStockSilo(s.numero);
-    if (cultivo && stock[cultivo] != null) stock[cultivo] += toneladas;
+    if (cultivo && stockSilos[cultivo] != null) stockSilos[cultivo] += toneladas;
   });
+
   let haySemillaPropia = false;
   silobolsasCache
     .filter((b) => !b.cerrada)
@@ -102,13 +108,16 @@ function calcularStockPorCultivo() {
         haySemillaPropia = true;
         return;
       }
-      if (b.cultivo && stock[b.cultivo] != null) stock[b.cultivo] += restanteSilobolsa(b);
+      if (b.cultivo && stockBolsa[b.cultivo] != null) stockBolsa[b.cultivo] += restanteSilobolsa(b);
     });
-  return { stock, haySemillaPropia };
+
+  const stockTotal = {};
+  CULTIVOS_POSCOSECHA.forEach((c) => (stockTotal[c] = stockSilos[c] + stockBolsa[c]));
+
+  return { stockSilos, stockBolsa, stockTotal, haySemillaPropia };
 }
 
-function renderResumenCereales() {
-  const { stock, haySemillaPropia } = calcularStockPorCultivo();
+function tablaResumenCereales(titulo, stock) {
   const total = Object.values(stock).reduce((a, b) => a + b, 0);
   const filas = CULTIVOS_POSCOSECHA.map(
     (c) => `
@@ -118,14 +127,24 @@ function renderResumenCereales() {
       </div>
     `
   ).join("");
-  document.getElementById("poscosecha-resumen-cereales").innerHTML =
-    filas +
-    `
+  return `
+    <h4 class="resumen-cereales-titulo">${escapeHtml(titulo)}</h4>
+    <div class="resumen-cereales">
+      ${filas}
       <div class="fila-cereal fila-cereal-total">
         <span>Total</span>
         <span>${total.toFixed(1)} tn</span>
       </div>
-    `;
+    </div>
+  `;
+}
+
+function renderResumenCereales() {
+  const { stockSilos, stockBolsa, stockTotal, haySemillaPropia } = calcularStockPorCultivo();
+  document.getElementById("poscosecha-resumen-cereales").innerHTML =
+    tablaResumenCereales("Silobolsa", stockBolsa) +
+    tablaResumenCereales("Planta de Silos", stockSilos) +
+    tablaResumenCereales("Total", stockTotal);
   document.getElementById("poscosecha-nota-semilla").hidden = !haySemillaPropia;
 }
 
