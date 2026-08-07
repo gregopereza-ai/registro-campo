@@ -116,6 +116,7 @@
       <button class="chip-categoria" data-cat="siembra" type="button">🌱 Siembra</button>
       <button class="chip-categoria" data-cat="emergencia" type="button">📏 Emergencia</button>
       <button class="chip-categoria" data-cat="cosecha" type="button">🌾 Floración/Cosecha</button>
+      <button class="chip-categoria" data-cat="laboreo" type="button">🚜 Laboreo</button>
     </div>
 
     <form id="form-malezas" class="form-categoria" hidden>
@@ -134,6 +135,9 @@
       </label>
       <label>Observaciones <span class="opcional">(opcional)</span>
         <textarea name="observaciones" rows="2"></textarea>
+      </label>
+      <label>Rendimiento estimado (kg/ha) <span class="opcional">(opcional)</span>
+        <input type="number" name="rendimientoEstimado" min="0" step="1" placeholder="Tu estimación a ojo, se compara sola con el rendimiento real de la cosecha">
       </label>
       <div class="foto-bloque">
         <span class="etiqueta-bloque">Foto <span class="opcional">(opcional)</span></span>
@@ -171,6 +175,12 @@
         <div id="productos-lista"></div>
         <button type="button" id="btn-agregar-producto" class="btn-secundario">+ Agregar producto</button>
       </div>
+      <label>Contratista <span class="opcional">(opcional)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="pulverizacion-contratista" name="contratista" placeholder="Ej: Fumigaciones Pérez" autocomplete="off">
+          <div class="autocomplete-lista" hidden></div>
+        </div>
+      </label>
       <label>Observaciones <span class="opcional">(opcional)</span>
         <textarea name="observaciones" rows="2" placeholder="Ej: viento leve, buena cobertura"></textarea>
       </label>
@@ -229,6 +239,13 @@
         <button type="button" id="btn-agregar-fertilizante" class="btn-secundario">+ Agregar fertilizante</button>
       </div>
 
+      <label>Contratista <span class="opcional">(opcional)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="siembra-contratista" name="contratista" placeholder="Ej: Siembra Directa Gómez" autocomplete="off">
+          <div class="autocomplete-lista" hidden></div>
+        </div>
+      </label>
+
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
 
@@ -260,6 +277,35 @@
       </label>
       <label>Humedad de cosecha (%) <span class="opcional">(opcional)</span>
         <input type="number" name="humedad" min="0" max="100" step="0.1">
+      </label>
+      <label>Contratista <span class="opcional">(opcional)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="cosecha-contratista" name="contratista" placeholder="Ej: Cosecha Rodríguez" autocomplete="off">
+          <div class="autocomplete-lista" hidden></div>
+        </div>
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <form id="form-laboreo" class="form-categoria" hidden>
+      <h3>Nuevo laboreo</h3>
+      <label>Tipo de laboreo
+        <div class="autocomplete-wrap">
+          <input type="text" id="laboreo-tipo" name="tipoLaboreo" placeholder="Ej: Rastra de discos, Arado, Cincel..." autocomplete="off" required>
+          <div class="autocomplete-lista" hidden></div>
+        </div>
+      </label>
+      <label>Fecha
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Contratista <span class="opcional">(opcional)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="laboreo-contratista" name="contratista" placeholder="Ej: Labranzas Suárez" autocomplete="off">
+          <div class="autocomplete-lista" hidden></div>
+        </div>
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2"></textarea>
       </label>
       <button type="submit" class="btn-primary">Guardar</button>
     </form>

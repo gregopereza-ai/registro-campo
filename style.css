@@ -559,7 +559,8 @@ textarea { resize: vertical; }
   gap: 6px;
 }
 
-.producto-fila .autocomplete-wrap { flex: 2; position: relative; }
+.autocomplete-wrap { position: relative; width: 100%; }
+.producto-fila .autocomplete-wrap { flex: 2; width: auto; }
 .producto-fila .producto-nombre,
 .producto-fila .fertilizante-nombre { width: 100%; }
 .producto-fila .producto-dosis,

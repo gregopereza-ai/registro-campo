@@ -4,6 +4,7 @@ const COLOR_CATEGORIA = {
   siembra: [47, 109, 60],
   emergencia: [91, 127, 209],
   cosecha: [184, 134, 46],
+  laboreo: [124, 92, 63],
 };
 
 function formatearFecha(iso) {
@@ -74,6 +75,7 @@ function detalleTextoPDF(r) {
     return [
       r.momento && `Momento: ${r.momento}`,
       productos && `Productos: ${productos}`,
+      r.contratista && `Contratista: ${r.contratista}`,
       r.observaciones && `Observaciones: ${r.observaciones}`,
     ].filter(Boolean);
   }
@@ -89,6 +91,18 @@ function detalleTextoPDF(r) {
   if (r.tipo === "siembra") {
     const fert = (r.fertilizantes || []).map((f) => `${f.nombre} — ${f.dosis} kg/ha`).join("; ");
     if (fert) lineas.push(`Fertilización: ${fert}`);
+  }
+  if (r.tipo === "cosecha" && r.rendimientoKgHa && typeof buscarEstimacionRendimiento === "function") {
+    const estimacion = buscarEstimacionRendimiento(r);
+    if (estimacion) {
+      const estimado = parseFloat(estimacion.rendimientoEstimado);
+      const real = parseFloat(r.rendimientoKgHa);
+      if (estimado > 0) {
+        const diffPct = ((real - estimado) / estimado) * 100;
+        const signo = diffPct >= 0 ? "+" : "";
+        lineas.push(`Vs. estimación: estimabas ${Math.round(estimado).toLocaleString("es-AR")} kg/ha (${signo}${diffPct.toFixed(1)}%)`);
+      }
+    }
   }
   return lineas;
 }

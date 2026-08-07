@@ -1,9 +1,10 @@
 const CAMPOS_CATEGORIA = {
-  malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones"],
-  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "observaciones"],
-  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables"],
+  malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado"],
+  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "observaciones", "contratista"],
+  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
-  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad"],
+  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista"],
+  laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "contratista", "observaciones"],
 };
 
 const ETIQUETAS_CAMPO = {
@@ -15,11 +16,12 @@ const ETIQUETAS_CAMPO = {
   semillasHaBruto: "Semillas/ha (bruto)", semillasHaViables: "Semillas/ha (viables)",
   plantasM2: "Plantas/m²", coeficienteLogro: "Coeficiente de logro (%)",
   fechaFloracion: "Fecha floración", rendimientoKgHa: "Rendimiento (kg/ha)", humedad: "Humedad (%)",
+  contratista: "Contratista", tipoLaboreo: "Tipo de laboreo", rendimientoEstimado: "Rendimiento estimado (kg/ha)",
 };
 
 const NOMBRES_CATEGORIA = {
   malezas: "Monitoreo", pulverizacion: "Pulverización", siembra: "Siembra",
-  emergencia: "Emergencia", cosecha: "Floración/Cosecha",
+  emergencia: "Emergencia", cosecha: "Floración/Cosecha", laboreo: "Laboreo",
 };
 
 let loteActual = null;
@@ -85,6 +87,12 @@ function nombresUsados(campo) {
     if (campo === "fertilizantes" && r.tipo === "siembra") {
       (r.fertilizantes || []).forEach((f) => { if (f.nombre) nombres.add(f.nombre); });
     }
+    if (campo === "contratistas" && r.contratista) {
+      nombres.add(r.contratista);
+    }
+    if (campo === "tiposLaboreo" && r.tipo === "laboreo" && r.tipoLaboreo) {
+      nombres.add(r.tipoLaboreo);
+    }
   });
   return [...nombres].sort((a, b) => a.localeCompare(b));
 }
@@ -135,20 +143,39 @@ document.getElementById("productos-lista").addEventListener("focusout", (e) => {
 });
 
 document.getElementById("productos-lista").addEventListener("click", (e) => {
-  const sugerencia = e.target.closest(".autocomplete-item");
-  if (sugerencia) {
-    const input = sugerencia.closest(".autocomplete-wrap").querySelector(".producto-nombre");
-    input.value = sugerencia.textContent;
-    ocultarAutocompletar(input);
-    const unidad = unidadUsadaPara(sugerencia.textContent);
-    const selectUnidad = input.closest(".producto-fila").querySelector(".producto-unidad");
-    if (unidad && selectUnidad) selectUnidad.value = unidad;
-    return;
-  }
   const btn = e.target.closest(".btn-quitar-producto");
   if (!btn) return;
   btn.closest(".producto-fila").remove();
 });
+
+// --- Autocompletar: un solo listener global para cualquier sugerencia (filas dinámicas o campos simples) ---
+document.addEventListener("click", (e) => {
+  const sugerencia = e.target.closest(".autocomplete-item");
+  if (!sugerencia) return;
+  const input = sugerencia.closest(".autocomplete-wrap").querySelector("input");
+  if (!input) return;
+  input.value = sugerencia.textContent;
+  ocultarAutocompletar(input);
+  if (input.classList.contains("producto-nombre")) {
+    const unidad = unidadUsadaPara(sugerencia.textContent);
+    const selectUnidad = input.closest(".producto-fila").querySelector(".producto-unidad");
+    if (unidad && selectUnidad) selectUnidad.value = unidad;
+  }
+});
+
+// --- Autocompletar en un campo de texto simple (no repetible), ej. Contratista o Tipo de laboreo ---
+function iniciarAutocompletarCampo(inputId, obtenerOpciones) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener("input", () => mostrarAutocompletar(input, obtenerOpciones()));
+  input.addEventListener("focusout", () => setTimeout(() => ocultarAutocompletar(input), 150));
+}
+
+iniciarAutocompletarCampo("pulverizacion-contratista", () => nombresUsados("contratistas"));
+iniciarAutocompletarCampo("siembra-contratista", () => nombresUsados("contratistas"));
+iniciarAutocompletarCampo("cosecha-contratista", () => nombresUsados("contratistas"));
+iniciarAutocompletarCampo("laboreo-contratista", () => nombresUsados("contratistas"));
+iniciarAutocompletarCampo("laboreo-tipo", () => nombresUsados("tiposLaboreo"));
 
 function agregarFilaFertilizante(valores = {}) {
   const cont = document.getElementById("fertilizantes-lista");
@@ -178,13 +205,6 @@ document.getElementById("fertilizantes-lista").addEventListener("focusout", (e) 
 });
 
 document.getElementById("fertilizantes-lista").addEventListener("click", (e) => {
-  const sugerencia = e.target.closest(".autocomplete-item");
-  if (sugerencia) {
-    const input = sugerencia.closest(".autocomplete-wrap").querySelector(".fertilizante-nombre");
-    input.value = sugerencia.textContent;
-    ocultarAutocompletar(input);
-    return;
-  }
   const btn = e.target.closest(".btn-quitar-producto");
   if (!btn) return;
   btn.closest(".producto-fila").remove();
@@ -695,6 +715,23 @@ document.getElementById("form-cosecha").addEventListener("submit", (e) => {
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 
+document.getElementById("form-laboreo").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const editando = !!edicionActual;
+  const datos = Object.fromEntries(new FormData(form).entries());
+  const promesa = guardarRegistroCategoria("laboreo", datos);
+  if (!promesa) return;
+  promesa
+    .then(() => {
+      salirModoEdicion(form);
+      form.hidden = true;
+      mostrarToast(editando ? "Laboreo actualizado" : "Laboreo guardado");
+      renderTimeline();
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
+});
+
 // --- Línea de tiempo ---
 function renderTimeline() {
   actualizarAvanceCampana();
@@ -733,12 +770,20 @@ function renderTarjetaTimeline(r) {
   `;
 }
 
+// --- Estimador de rendimiento: compara la estimación cargada en Monitoreo contra el rendimiento real de Cosecha ---
+function buscarEstimacionRendimiento(r) {
+  return cargarRegistros()
+    .filter((x) => x.tipo === "malezas" && x.lote === r.lote && x.cultivo === r.cultivo && x.temporada === r.temporada && x.rendimientoEstimado)
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))[0] || null;
+}
+
 function detalleParaMostrar(r) {
   if (r.tipo === "pulverizacion") {
     const productosTexto = (r.productos || []).map((p) => `${p.nombre} — ${p.dosis} ${p.unidad}`).join("; ");
     const filas = [
       ["Momento", r.momento],
       ["Productos", productosTexto],
+      ["Contratista", r.contratista],
       ["Observaciones", r.observaciones],
     ];
     return filas.filter(([, v]) => v).map(([label, v]) => `<dt>${label}</dt><dd>${escapeHtml(v)}</dd>`).join("");
@@ -754,6 +799,18 @@ function detalleParaMostrar(r) {
   }
   if (r.tipo === "malezas" && r.foto) {
     html += `<dd><img src="${r.foto}" class="foto-timeline" alt="Foto del monitoreo"></dd>`;
+  }
+  if (r.tipo === "cosecha" && r.rendimientoKgHa) {
+    const estimacion = buscarEstimacionRendimiento(r);
+    if (estimacion) {
+      const estimado = parseFloat(estimacion.rendimientoEstimado);
+      const real = parseFloat(r.rendimientoKgHa);
+      if (estimado > 0) {
+        const diffPct = ((real - estimado) / estimado) * 100;
+        const signo = diffPct >= 0 ? "+" : "";
+        html += `<dt>Vs. estimación</dt><dd>Estimabas ${Math.round(estimado).toLocaleString("es-AR")} kg/ha (${signo}${diffPct.toFixed(1)}%)</dd>`;
+      }
+    }
   }
   return html;
 }
