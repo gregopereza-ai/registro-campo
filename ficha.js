@@ -328,7 +328,15 @@ function actualizarMetaFicha() {
   document.getElementById("hectareas-oficiales").value = haOficial != null ? haOficial : "";
   document.getElementById("hectareas-oficiales-nota").textContent =
     lote && lote.hectareasTotales != null ? `Según el mapa: ${lote.hectareasTotales.toFixed(1)} ha` : "";
+  // Colapsado por defecto para evitar toques accidentales: hay que tocar "Cambiar" para editarlo.
+  document.getElementById("bloque-hectareas-oficiales").hidden = true;
 }
+
+document.getElementById("btn-mostrar-hectareas-oficiales").addEventListener("click", () => {
+  const bloque = document.getElementById("bloque-hectareas-oficiales");
+  bloque.hidden = !bloque.hidden;
+  if (!bloque.hidden) document.getElementById("hectareas-oficiales").focus();
+});
 
 document.getElementById("btn-guardar-hectareas-oficiales").addEventListener("click", () => {
   if (!loteActual) return;
@@ -337,7 +345,10 @@ document.getElementById("btn-guardar-hectareas-oficiales").addEventListener("cli
   db.collection("campanasLote")
     .doc(idDocLote(loteActual))
     .set({ lote: loteActual, hectareasOficiales }, { merge: true })
-    .then(() => mostrarToast("Hectáreas oficiales guardadas"))
+    .then(() => {
+      mostrarToast("Hectáreas oficiales guardadas");
+      document.getElementById("bloque-hectareas-oficiales").hidden = true;
+    })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
 });
 

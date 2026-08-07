@@ -82,15 +82,18 @@
     <div class="ficha-header">
       <h2 id="ficha-nombre">Lote</h2>
       <p id="ficha-meta" class="ficha-meta"></p>
+      <button id="btn-mostrar-hectareas-oficiales" class="btn-secundario" type="button">✏️ Cambiar hectáreas oficiales</button>
     </div>
 
-    <div class="campana-selector">
-      <label>Hectáreas oficiales <span class="opcional">(de tu planilla, opcional)</span>
-        <input type="number" id="hectareas-oficiales" min="0" step="0.1" placeholder="Ej: 71.2">
-      </label>
-      <button id="btn-guardar-hectareas-oficiales" class="btn-primary" type="button">Guardar</button>
+    <div id="bloque-hectareas-oficiales" hidden>
+      <div class="campana-selector">
+        <label>Hectáreas oficiales <span class="opcional">(de tu planilla, opcional)</span>
+          <input type="number" id="hectareas-oficiales" min="0" step="0.1" placeholder="Ej: 71.2">
+        </label>
+        <button id="btn-guardar-hectareas-oficiales" class="btn-primary" type="button">Guardar</button>
+      </div>
+      <p id="hectareas-oficiales-nota" class="campana-actual-label"></p>
     </div>
-    <p id="hectareas-oficiales-nota" class="campana-actual-label"></p>
 
     <div class="campana-selector">
       <label>Cultivo
