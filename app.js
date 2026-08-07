@@ -56,14 +56,14 @@ function renderPanelAvanceGeneral() {
 
   nombresUnicos.forEach((nombre) => {
     const campana = campanasLoteCache[nombre];
-    if (!campana) return;
+    if (!campana || !campana.cultivo) return; // puede existir el doc solo por hectareasOficiales, sin campaña asignada
     const lote = lotesCache.find((l) => l.nombre === nombre);
     const clave = `${campana.cultivo}__${campana.temporada}`;
     if (!grupos.has(clave)) {
       grupos.set(clave, { cultivo: campana.cultivo, temporada: campana.temporada, hectareasTotales: 0, hectareasPlan: 0, sembrado: 0, cosechado: 0, produccion: 0 });
     }
     const g = grupos.get(clave);
-    g.hectareasTotales += lote?.hectareasTotales || 0;
+    g.hectareasTotales += (typeof hectareasDeLote === "function" ? hectareasDeLote(nombre, lote) : lote?.hectareasTotales) || 0;
     g.hectareasPlan += parseFloat(campana.hectareasPlan) || 0;
     const avance = calcularAvanceCampana(nombre, campana);
     g.sembrado += avance.sembrado;

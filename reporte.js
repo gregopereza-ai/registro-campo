@@ -157,9 +157,9 @@ function generarReportePDF(lote, cultivo, temporada) {
   doc.line(margen, y, anchoPagina - margen, y);
   y += 8;
 
-  const ambienteHa = loteInfo
-    ? `${loteInfo.ambiente} — ${loteInfo.hectareasTotales ? loteInfo.hectareasTotales.toFixed(1) + " ha" : "sin datos de ha"}`
-    : "";
+  const haOficialLote = typeof hectareasOficialesDe === "function" ? hectareasOficialesDe(lote) : null;
+  const haParaMostrar = haOficialLote != null ? haOficialLote : loteInfo && loteInfo.hectareasTotales;
+  const ambienteHa = loteInfo ? `${loteInfo.ambiente} — ${haParaMostrar ? haParaMostrar.toFixed(1) + " ha" : "sin datos de ha"}` : "";
   lineaTexto(`Lote - Campaña: ${lote} - ${cultivo} ${temporada}`, margen, 12, [30, 30, 30], true);
   y += 6;
   lineaTexto(ambienteHa, margen, 10, [90, 90, 90], false);

@@ -30,12 +30,24 @@ let loteActual = null;
 let campanasLoteCache = {};
 let unsubscribeCampanas = null;
 
+// Los nombres de lote pueden traer "/" (ej. "33/34 A1"), y Firestore no permite
+// "/" dentro de un id de documento (lo interpreta como separador de ruta).
+// Por eso el id de documento va saneado, pero el nombre real del lote se guarda
+// siempre como campo "lote" adentro del doc, y el cache se arma a partir de ese
+// campo (con doc.id como respaldo para docs viejos que no lo tenían).
+function idDocLote(lote) {
+  return lote.replace(/\//g, "__");
+}
+
 function iniciarListenerCampanas() {
   if (unsubscribeCampanas) return;
   unsubscribeCampanas = db.collection("campanasLote").onSnapshot(
     (snapshot) => {
       const nuevoMapa = {};
-      snapshot.forEach((doc) => (nuevoMapa[doc.id] = doc.data()));
+      snapshot.forEach((doc) => {
+        const datos = doc.data();
+        nuevoMapa[datos.lote || doc.id] = datos;
+      });
       campanasLoteCache = nuevoMapa;
       onCampanasActualizadas();
     },
@@ -47,11 +59,29 @@ function onCampanasActualizadas() {
   if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
   if (!loteActual || !document.getElementById("tab-ficha").classList.contains("active")) return;
   actualizarEtiquetaCampana();
+  actualizarMetaFicha();
   renderTimeline();
 }
 
 function campanaActivaDe(lote) {
-  return campanasLoteCache[lote] || null;
+  // Un doc puede existir solo por tener hectareasOficiales cargadas, sin campaña asignada
+  // todavía (cultivo/temporada) — en ese caso no cuenta como "campaña activa".
+  const campana = campanasLoteCache[lote];
+  return campana && campana.cultivo ? campana : null;
+}
+
+// Hectáreas "oficiales" cargadas a mano por el usuario para este lote (su planilla),
+// que reemplazan a las hectáreas calculadas del polígono del mapa en toda la app.
+function hectareasOficialesDe(lote) {
+  const campana = campanasLoteCache[lote];
+  const valor = campana && campana.hectareasOficiales;
+  return valor != null && valor !== "" ? parseFloat(valor) : null;
+}
+
+function hectareasDeLote(lote, loteInfo) {
+  const oficial = hectareasOficialesDe(lote);
+  if (oficial != null) return oficial;
+  return loteInfo && loteInfo.hectareasTotales != null ? loteInfo.hectareasTotales : null;
 }
 
 function agregarFilaProducto(valores = {}) {
@@ -281,6 +311,36 @@ document.getElementById("malezas-foto-input").addEventListener("change", (e) => 
 
 document.getElementById("btn-quitar-foto").addEventListener("click", () => mostrarPreviewFoto(null));
 
+// --- Meta del lote: nombre, ambiente, hectáreas (oficiales u obtenidas del mapa) ---
+function actualizarMetaFicha() {
+  const lote = lotesCache.find((l) => l.nombre === loteActual);
+  const haOficial = hectareasOficialesDe(loteActual);
+  document.getElementById("ficha-nombre").textContent = loteActual || "";
+  document.getElementById("ficha-meta").textContent = lote
+    ? `${lote.ambiente} — ${
+        haOficial != null
+          ? haOficial.toFixed(1) + " ha"
+          : lote.hectareasTotales != null
+          ? lote.hectareasTotales.toFixed(1) + " ha (del mapa)"
+          : "sin datos de ha"
+      }`
+    : "";
+  document.getElementById("hectareas-oficiales").value = haOficial != null ? haOficial : "";
+  document.getElementById("hectareas-oficiales-nota").textContent =
+    lote && lote.hectareasTotales != null ? `Según el mapa: ${lote.hectareasTotales.toFixed(1)} ha` : "";
+}
+
+document.getElementById("btn-guardar-hectareas-oficiales").addEventListener("click", () => {
+  if (!loteActual) return;
+  const valor = document.getElementById("hectareas-oficiales").value;
+  const hectareasOficiales = valor ? parseFloat(valor) : null;
+  db.collection("campanasLote")
+    .doc(idDocLote(loteActual))
+    .set({ lote: loteActual, hectareasOficiales }, { merge: true })
+    .then(() => mostrarToast("Hectáreas oficiales guardadas"))
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
+});
+
 // --- Abrir / cerrar Ficha del lote ---
 function abrirFicha(nombreLote) {
   loteActual = nombreLote;
@@ -288,11 +348,7 @@ function abrirFicha(nombreLote) {
   document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
   document.getElementById("tab-ficha").classList.add("active");
 
-  const lote = lotesCache.find((l) => l.nombre === nombreLote);
-  document.getElementById("ficha-nombre").textContent = nombreLote;
-  document.getElementById("ficha-meta").textContent = lote
-    ? `${lote.ambiente} — ${lote.hectareasTotales ? lote.hectareasTotales.toFixed(1) + " ha" : "sin datos de ha"}`
-    : "";
+  actualizarMetaFicha();
 
   document.querySelectorAll(".form-categoria").forEach((f) => {
     f.hidden = true;
@@ -411,8 +467,8 @@ document.getElementById("btn-guardar-campana").addEventListener("click", () => {
     return;
   }
   db.collection("campanasLote")
-    .doc(loteActual)
-    .set({ cultivo, temporada, hectareasPlan })
+    .doc(idDocLote(loteActual))
+    .set({ cultivo, temporada, hectareasPlan, lote: loteActual }, { merge: true })
     .then(() => {
       actualizarEtiquetaCampana();
       renderTimeline();
