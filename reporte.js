@@ -170,6 +170,23 @@ function generarReportePDF(lote, cultivo, temporada) {
     const fertilizacion = (siembra.fertilizantes || []).map((f) => `${f.nombre} — ${f.dosis} kg/ha`).join("; ");
     if (fertilizacion) filas.push(`Fertilización: ${fertilizacion}`);
 
+    if (typeof calcularAvanceCampana === "function") {
+      const campanaLote = (typeof campanasLoteCache !== "undefined" && campanasLoteCache[lote]) || {};
+      const avance = calcularAvanceCampana(lote, { cultivo, temporada, hectareasPlan: campanaLote.hectareasPlan });
+      if (avance.hectareasPlan) {
+        filas.push(
+          `Avance de siembra: ${avance.sembrado.toFixed(1)} de ${avance.hectareasPlan.toFixed(1)} ha planificadas (${Math.round((avance.sembrado / avance.hectareasPlan) * 100)}%)`
+        );
+      }
+      if (avance.cosechado > 0) {
+        const pct = avance.sembrado > 0 ? ` (${Math.round((avance.cosechado / avance.sembrado) * 100)}%)` : "";
+        filas.push(`Cosechado: ${avance.cosechado.toFixed(1)} ha${pct}`);
+      }
+      if (avance.produccion > 0) {
+        filas.push(`Producción total: ${avance.produccion.toFixed(1)} t`);
+      }
+    }
+
     doc.setFontSize(9.5);
     doc.setTextColor(50, 50, 50);
     doc.setFont(undefined, "normal");

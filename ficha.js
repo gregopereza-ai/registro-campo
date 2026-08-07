@@ -3,7 +3,7 @@ const CAMPOS_CATEGORIA = {
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "observaciones"],
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
-  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "rendimientoKgHa", "humedad"],
+  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad"],
 };
 
 const ETIQUETAS_CAMPO = {
@@ -42,6 +42,7 @@ function iniciarListenerCampanas() {
 }
 
 function onCampanasActualizadas() {
+  if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
   if (!loteActual || !document.getElementById("tab-ficha").classList.contains("active")) return;
   actualizarEtiquetaCampana();
   renderTimeline();
@@ -195,6 +196,7 @@ function abrirFicha(nombreLote) {
   const campana = campanaActivaDe(nombreLote);
   document.getElementById("campana-cultivo").value = campana ? campana.cultivo : "Trigo";
   document.getElementById("campana-temporada").value = campana ? campana.temporada : "";
+  document.getElementById("campana-hectareas-plan").value = campana && campana.hectareasPlan ? campana.hectareasPlan : "";
 
   actualizarEtiquetaCampana();
   actualizarCamposSiembraSegunCultivo();
@@ -239,16 +241,66 @@ function actualizarEtiquetaCampana() {
     : "Todavía no asignaste una campaña a este lote.";
 }
 
+// --- Avance de campaña: planificado / sembrado / cosechado / producción ---
+function sumarCampo(tipo, campo, lote, cultivo, temporada) {
+  return cargarRegistros()
+    .filter((r) => r.tipo === tipo && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada)
+    .reduce((suma, r) => suma + (parseFloat(r[campo]) || 0), 0);
+}
+
+function calcularAvanceCampana(lote, campana) {
+  const sembrado = sumarCampo("siembra", "hectareas", lote, campana.cultivo, campana.temporada);
+  const cosechado = sumarCampo("cosecha", "hectareas", lote, campana.cultivo, campana.temporada);
+  const produccion = cargarRegistros()
+    .filter((r) => r.tipo === "cosecha" && r.lote === lote && r.cultivo === campana.cultivo && r.temporada === campana.temporada)
+    .reduce((suma, r) => {
+      const ha = parseFloat(r.hectareas) || 0;
+      const rinde = parseFloat(r.rendimientoKgHa) || 0;
+      return suma + (ha * rinde) / 1000; // toneladas
+    }, 0);
+  const hectareasPlan = campana.hectareasPlan ? parseFloat(campana.hectareasPlan) : null;
+  return { sembrado, cosechado, produccion, hectareasPlan };
+}
+
+function actualizarAvanceCampana() {
+  const cont = document.getElementById("campana-avance");
+  const campana = campanaActivaDe(loteActual);
+  if (!campana) {
+    cont.hidden = true;
+    return;
+  }
+  const { sembrado, cosechado, produccion, hectareasPlan } = calcularAvanceCampana(loteActual, campana);
+  if (!sembrado && !hectareasPlan) {
+    cont.hidden = true;
+    return;
+  }
+  cont.hidden = false;
+
+  document.getElementById("avance-sembrado").textContent = `${sembrado.toFixed(1)} ha`;
+  document.getElementById("avance-sembrado-etq").textContent = hectareasPlan
+    ? `Sembrado (${Math.round((sembrado / hectareasPlan) * 100)}% del plan)`
+    : "Sembrado";
+
+  document.getElementById("avance-cosechado").textContent = `${cosechado.toFixed(1)} ha`;
+  document.getElementById("avance-cosechado-etq").textContent = sembrado
+    ? `Cosechado (${Math.round((cosechado / sembrado) * 100)}%)`
+    : "Cosechado";
+
+  document.getElementById("avance-produccion").textContent = `${produccion.toFixed(1)} t`;
+}
+
 document.getElementById("btn-guardar-campana").addEventListener("click", () => {
   const cultivo = document.getElementById("campana-cultivo").value;
   const temporada = document.getElementById("campana-temporada").value.trim();
+  const hectareasPlanValor = document.getElementById("campana-hectareas-plan").value;
+  const hectareasPlan = hectareasPlanValor ? parseFloat(hectareasPlanValor) : null;
   if (!temporada) {
     mostrarToast("Ingresá la temporada (ej: 26/27)");
     return;
   }
   db.collection("campanasLote")
     .doc(loteActual)
-    .set({ cultivo, temporada })
+    .set({ cultivo, temporada, hectareasPlan })
     .then(() => {
       actualizarEtiquetaCampana();
       renderTimeline();
@@ -546,6 +598,7 @@ document.getElementById("form-cosecha").addEventListener("submit", (e) => {
 
 // --- Línea de tiempo ---
 function renderTimeline() {
+  actualizarAvanceCampana();
   const cont = document.getElementById("ficha-timeline");
   const campana = campanaActivaDe(loteActual);
   if (!campana) {

@@ -31,9 +31,68 @@ function iniciarListenerRegistros() {
 }
 
 function onRegistrosActualizados() {
+  if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
   if (document.getElementById("tab-ficha").classList.contains("active") && typeof renderTimeline === "function") {
     renderTimeline();
   }
+}
+
+// --- Panel general de avance de campaña (debajo del mapa) ---
+function renderPanelAvanceGeneral() {
+  const cont = document.getElementById("panel-avance-general");
+  if (!cont || !lotesCache.length || typeof campanasLoteCache === "undefined" || typeof calcularAvanceCampana !== "function") return;
+
+  const nombresUnicos = [...new Set(lotesCache.map((l) => l.nombre))];
+  const grupos = new Map(); // "cultivo__temporada" -> { cultivo, temporada, hectareasTotales, hectareasPlan, sembrado, cosechado, produccion }
+
+  nombresUnicos.forEach((nombre) => {
+    const campana = campanasLoteCache[nombre];
+    if (!campana) return;
+    const lote = lotesCache.find((l) => l.nombre === nombre);
+    const clave = `${campana.cultivo}__${campana.temporada}`;
+    if (!grupos.has(clave)) {
+      grupos.set(clave, { cultivo: campana.cultivo, temporada: campana.temporada, hectareasTotales: 0, hectareasPlan: 0, sembrado: 0, cosechado: 0, produccion: 0 });
+    }
+    const g = grupos.get(clave);
+    g.hectareasTotales += lote?.hectareasTotales || 0;
+    g.hectareasPlan += parseFloat(campana.hectareasPlan) || 0;
+    const avance = calcularAvanceCampana(nombre, campana);
+    g.sembrado += avance.sembrado;
+    g.cosechado += avance.cosechado;
+    g.produccion += avance.produccion;
+  });
+
+  const listaGrupos = [...grupos.values()].sort((a, b) => b.hectareasTotales - a.hectareasTotales);
+
+  cont.innerHTML = listaGrupos.length
+    ? listaGrupos.map(renderTarjetaAvanceGeneral).join("")
+    : '<p class="vacio">Todavía no hay campañas asignadas a ningún lote.</p>';
+}
+
+function renderTarjetaAvanceGeneral(g) {
+  const baseSembrado = g.hectareasPlan || g.hectareasTotales;
+  const pctSembrado = baseSembrado ? Math.min(100, Math.round((g.sembrado / baseSembrado) * 100)) : 0;
+  const pctCosechado = g.sembrado ? Math.min(100, Math.round((g.cosechado / g.sembrado) * 100)) : 0;
+  const etiquetaSembrado = g.hectareasPlan
+    ? `Sembrado: ${g.sembrado.toFixed(1)} de ${g.hectareasPlan.toFixed(1)} ha planificadas (${pctSembrado}%)`
+    : `Sembrado: ${g.sembrado.toFixed(1)} ha (${pctSembrado}%)`;
+  return `
+    <div class="avance-general-card">
+      <div class="fila-top">
+        <span class="tipo-badge">${escapeHtml(g.cultivo)} ${escapeHtml(g.temporada)}</span>
+        <span class="lote-fecha">${g.hectareasTotales.toFixed(1)} ha</span>
+      </div>
+      <div class="barra-avance">
+        <span class="barra-etiqueta">${etiquetaSembrado}</span>
+        <div class="barra-fondo"><div class="barra-relleno barra-siembra" style="width:${pctSembrado}%"></div></div>
+      </div>
+      <div class="barra-avance">
+        <span class="barra-etiqueta">Cosechado: ${g.cosechado.toFixed(1)} ha (${pctCosechado}%)</span>
+        <div class="barra-fondo"><div class="barra-relleno barra-cosecha" style="width:${pctCosechado}%"></div></div>
+      </div>
+      ${g.produccion > 0 ? `<p class="avance-produccion">Producción: ${g.produccion.toFixed(1)} t</p>` : ""}
+    </div>
+  `;
 }
 
 // --- Arranque de la app (recién después de iniciar sesión) ---
@@ -298,6 +357,7 @@ function dibujarMapa() {
   });
 
   iniciarControlesMapa();
+  renderPanelAvanceGeneral();
 }
 
 // --- Service worker para uso offline ---

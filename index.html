@@ -63,6 +63,9 @@
       </div>
       <button type="button" id="btn-zoom-reset" class="btn-secundario btn-restablecer">Restablecer vista</button>
     </div>
+
+    <h3 class="avance-general-titulo">Avance de la campaña</h3>
+    <div id="panel-avance-general"></div>
   </section>
 
   <section id="tab-ficha" class="tab-panel">
@@ -85,9 +88,26 @@
       <label>Temporada
         <input type="text" id="campana-temporada" placeholder="Ej: 26/27">
       </label>
+      <label>Ha planificadas <span class="opcional">(opcional)</span>
+        <input type="number" id="campana-hectareas-plan" min="0" step="0.1">
+      </label>
       <button id="btn-guardar-campana" class="btn-primary" type="button">Guardar campaña</button>
     </div>
     <p id="campana-actual-label" class="campana-actual-label"></p>
+    <div class="resumen-lluvias" id="campana-avance" hidden>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="avance-sembrado">0 ha</span>
+        <span class="resumen-etiqueta" id="avance-sembrado-etq">Sembrado</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="avance-cosechado">0 ha</span>
+        <span class="resumen-etiqueta" id="avance-cosechado-etq">Cosechado</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="avance-produccion">0 t</span>
+        <span class="resumen-etiqueta">Producción</span>
+      </div>
+    </div>
 
     <div class="chips-categorias" id="chips-categorias">
       <button class="chip-categoria" data-cat="malezas" type="button">🌿 Monitoreo</button>
@@ -222,6 +242,9 @@
       </label>
       <label>Fecha de cosecha
         <input type="date" name="fecha" required>
+      </label>
+      <label>Hectáreas cosechadas <span class="opcional">(opcional)</span>
+        <input type="number" name="hectareas" min="0" step="0.1">
       </label>
       <label>Rendimiento (kg/ha)
         <input type="number" name="rendimientoKgHa" min="0" step="1">

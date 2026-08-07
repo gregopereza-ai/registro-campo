@@ -385,6 +385,49 @@ textarea { resize: vertical; }
   vector-effect: non-scaling-stroke;
 }
 
+.avance-general-titulo {
+  margin-top: 20px;
+  font-size: 1.05rem;
+}
+
+.avance-general-card {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.barra-avance { margin-top: 8px; }
+
+.barra-etiqueta {
+  font-size: 0.82rem;
+  color: #333;
+}
+
+.barra-fondo {
+  background: var(--fondo);
+  border-radius: 999px;
+  height: 8px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.barra-relleno {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.barra-siembra { background: var(--verde); }
+.barra-cosecha { background: #c9a24b; }
+
+.avance-produccion {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--verde-oscuro);
+}
+
 /* --- Ficha del lote --- */
 .btn-volver {
   background: none;
