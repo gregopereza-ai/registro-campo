@@ -295,6 +295,22 @@ textarea { resize: vertical; }
   border-radius: 999px;
 }
 
+.feed-card { cursor: pointer; }
+.feed-card:active { background: var(--fondo); }
+
+.feed-lugar {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--verde-oscuro);
+}
+
+.feed-resumen {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #333;
+}
+
 .checkbox-plan {
   flex-direction: row !important;
   align-items: center;

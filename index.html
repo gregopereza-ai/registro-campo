@@ -41,6 +41,7 @@
 <div id="menu-backdrop" class="menu-backdrop" hidden></div>
 <nav class="tabs" id="tabs" hidden>
   <button class="tab-btn active" data-tab="mapa">🗺️ Mapa</button>
+  <button class="tab-btn" data-tab="feed">📰 Feed</button>
   <button class="tab-btn" data-tab="clima">🌦️ Clima</button>
   <button class="tab-btn" data-tab="registros">📄 Registros</button>
   <button class="tab-btn" data-tab="papelera">🗑️ Papelera</button>
@@ -67,6 +68,12 @@
 
     <h3 class="avance-general-titulo">Avance de la campaña</h3>
     <div id="panel-avance-general"></div>
+  </section>
+
+  <section id="tab-feed" class="tab-panel">
+    <h2>Feed</h2>
+    <p class="ayuda-mapa">Lo último cargado en cualquier lote, sin tener que entrar uno por uno. Tocá una tarjeta para ir directo ahí.</p>
+    <div id="lista-feed"></div>
   </section>
 
   <section id="tab-ficha" class="tab-panel">
@@ -416,6 +423,7 @@
 <script src="ficha.js"></script>
 <script src="clima.js"></script>
 <script src="papelera.js"></script>
+<script src="feed.js"></script>
 <script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>

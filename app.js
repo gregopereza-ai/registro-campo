@@ -38,6 +38,9 @@ function onRegistrosActualizados() {
   if (document.getElementById("tab-ficha").classList.contains("active") && typeof renderTimeline === "function") {
     renderTimeline();
   }
+  if (document.getElementById("tab-feed").classList.contains("active") && typeof renderFeed === "function") {
+    renderFeed();
+  }
   if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
     renderPapelera();
   }
@@ -140,6 +143,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
   if (btn.dataset.tab === "mapa") dibujarMapa();
   if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
+  if (btn.dataset.tab === "feed" && typeof renderFeed === "function") renderFeed();
   cerrarMenu();
 });
 

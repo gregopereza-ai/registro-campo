@@ -20,6 +20,9 @@ function iniciarListenerClima() {
       if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
         renderPapelera();
       }
+      if (document.getElementById("tab-feed").classList.contains("active") && typeof renderFeed === "function") {
+        renderFeed();
+      }
     },
     () => mostrarToast("No se pudo sincronizar el clima con la nube")
   );
