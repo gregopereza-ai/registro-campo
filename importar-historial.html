@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Importar historial de Clima — Zogoibi</title>
+<link rel="icon" href="icon.png" type="image/png">
+<meta name="theme-color" content="#2f6d3c">
+<link rel="stylesheet" href="style.css">
+<style>
+  main.importar { padding: 16px; max-width: 640px; margin: 0 auto; }
+  .resumen-import {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .resumen-import ul { margin: 8px 0 0; padding-left: 20px; }
+  #estado-import { margin-top: 14px; font-weight: 600; }
+  #barra-import {
+    background: var(--fondo);
+    border-radius: 999px;
+    height: 10px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  #barra-import-relleno { height: 100%; background: var(--verde); width: 0%; }
+</style>
+</head>
+<body>
+
+<section id="pantalla-login">
+  <div class="login-caja">
+    <h1>Registro de Campo</h1>
+    <p class="subtitulo">Establecimiento Zogoibi S.A.</p>
+    <form id="form-login">
+      <label>Usuario (email)
+        <input type="email" id="login-email" required autocomplete="username">
+      </label>
+      <label>Contraseña
+        <input type="password" id="login-password" required autocomplete="current-password">
+      </label>
+      <p id="login-error" class="login-error"></p>
+      <button type="submit" class="btn-primary">Ingresar</button>
+    </form>
+  </div>
+</section>
+
+<div id="app-contenido" hidden>
+  <header>
+    <h1>Importar historial de Clima</h1>
+    <p class="subtitulo">Establecimiento Zogoibi S.A.</p>
+  </header>
+
+  <main class="importar">
+    <div class="resumen-import">
+      <p><strong>Esta página carga, una sola vez, el historial de lluvias y heladas 2026 de tu planilla de Excel a la app.</strong></p>
+      <ul>
+        <li id="resumen-lluvias">Lluvias a cargar: ...</li>
+        <li id="resumen-heladas">Heladas a cargar: ...</li>
+      </ul>
+      <p class="ayuda-mapa">Si algún día ya está cargado (por ejemplo porque volviste a abrir esta página), no se va a duplicar.</p>
+    </div>
+
+    <button type="button" id="btn-importar" class="btn-primary btn-ancho">Cargar historial a la app</button>
+    <div id="barra-import"><div id="barra-import-relleno"></div></div>
+    <p id="estado-import"></p>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+// --- Datos extraídos de VARIOS (3).xlsx (hojas LLUVIAS AÑO 2026 / HELADAS AÑO 2026) ---
+const LLUVIAS_HISTORICO = [
+  {"fecha":"2026-01-13","mm":8},{"fecha":"2026-01-15","mm":19},{"fecha":"2026-01-17","mm":8},
+  {"fecha":"2026-02-04","mm":5},{"fecha":"2026-02-12","mm":2},{"fecha":"2026-02-15","mm":17},
+  {"fecha":"2026-03-03","mm":22},{"fecha":"2026-03-14","mm":40},{"fecha":"2026-03-16","mm":45},{"fecha":"2026-03-17","mm":40},{"fecha":"2026-03-21","mm":70},{"fecha":"2026-03-29","mm":18},
+  {"fecha":"2026-04-14","mm":36},{"fecha":"2026-04-21","mm":50},{"fecha":"2026-04-22","mm":8},{"fecha":"2026-04-26","mm":2},
+  {"fecha":"2026-05-07","mm":29},
+  {"fecha":"2026-06-01","mm":5},{"fecha":"2026-06-05","mm":50},{"fecha":"2026-06-18","mm":3},
+  {"fecha":"2026-07-11","mm":12},{"fecha":"2026-07-18","mm":5},{"fecha":"2026-07-29","mm":11},{"fecha":"2026-07-31","mm":15},
+  {"fecha":"2026-08-02","mm":5},{"fecha":"2026-08-06","mm":15}
+];
+
+const HELADAS_HISTORICO = [
+  {"fecha":"2026-01-19","tempMin":-1},
+  {"fecha":"2026-02-26","tempMin":-2},
+  {"fecha":"2026-03-09","tempMin":-1},
+  {"fecha":"2026-04-05","tempMin":-2},{"fecha":"2026-04-27","tempMin":-1},{"fecha":"2026-04-28","tempMin":-2},{"fecha":"2026-04-30","tempMin":-3},
+  {"fecha":"2026-05-03","tempMin":-9},{"fecha":"2026-05-04","tempMin":-2},{"fecha":"2026-05-11","tempMin":-4},{"fecha":"2026-05-13","tempMin":-5},{"fecha":"2026-05-15","tempMin":-5},{"fecha":"2026-05-17","tempMin":-7},{"fecha":"2026-05-18","tempMin":-7},{"fecha":"2026-05-19","tempMin":-5},{"fecha":"2026-05-27","tempMin":-3},
+  {"fecha":"2026-06-08","tempMin":-5},{"fecha":"2026-06-13","tempMin":-5},{"fecha":"2026-06-14","tempMin":-10},{"fecha":"2026-06-20","tempMin":-4},{"fecha":"2026-06-21","tempMin":-5},{"fecha":"2026-06-22","tempMin":-5},{"fecha":"2026-06-23","tempMin":-4},{"fecha":"2026-06-24","tempMin":-6},{"fecha":"2026-06-26","tempMin":-6},{"fecha":"2026-06-28","tempMin":-3},{"fecha":"2026-06-29","tempMin":-5},{"fecha":"2026-06-30","tempMin":-10},
+  {"fecha":"2026-07-02","tempMin":-8},{"fecha":"2026-07-03","tempMin":-10},{"fecha":"2026-07-04","tempMin":-12},{"fecha":"2026-07-07","tempMin":-8},{"fecha":"2026-07-13","tempMin":-5},{"fecha":"2026-07-15","tempMin":-2},{"fecha":"2026-07-19","tempMin":-2},{"fecha":"2026-07-21","tempMin":-3},{"fecha":"2026-07-22","tempMin":-8},{"fecha":"2026-07-28","tempMin":-1},
+  {"fecha":"2026-08-07","tempMin":-4}
+];
+
+document.getElementById("resumen-lluvias").textContent = `Lluvias a cargar: ${LLUVIAS_HISTORICO.length} registros`;
+document.getElementById("resumen-heladas").textContent = `Heladas a cargar: ${HELADAS_HISTORICO.length} registros`;
+
+document.getElementById("form-login").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.signInWithEmailAndPassword(email, password).catch((err) => {
+    document.getElementById("login-error").textContent = "Usuario o contraseña incorrectos.";
+  });
+});
+
+auth.onAuthStateChanged((user) => {
+  document.getElementById("pantalla-login").hidden = !!user;
+  document.getElementById("app-contenido").hidden = !user;
+});
+
+document.getElementById("btn-importar").addEventListener("click", async () => {
+  const boton = document.getElementById("btn-importar");
+  const estado = document.getElementById("estado-import");
+  const barra = document.getElementById("barra-import");
+  const relleno = document.getElementById("barra-import-relleno");
+  boton.disabled = true;
+  estado.textContent = "Revisando lo que ya está cargado...";
+  barra.style.display = "block";
+
+  try {
+    const existentesSnap = await db.collection("clima").get();
+    const existentes = new Set();
+    existentesSnap.forEach((doc) => {
+      const d = doc.data();
+      existentes.add(`${d.tipo}__${d.fecha}`);
+    });
+
+    const pendientes = [];
+    LLUVIAS_HISTORICO.forEach((r) => {
+      if (!existentes.has(`lluvia__${r.fecha}`)) pendientes.push({ tipo: "lluvia", fecha: r.fecha, mm: r.mm, observaciones: "" });
+    });
+    HELADAS_HISTORICO.forEach((r) => {
+      if (!existentes.has(`helada__${r.fecha}`)) pendientes.push({ tipo: "helada", fecha: r.fecha, tempMin: r.tempMin, observaciones: "" });
+    });
+
+    if (pendientes.length === 0) {
+      estado.textContent = "Ya estaba todo cargado — no hay nada nuevo para agregar.";
+      boton.disabled = false;
+      return;
+    }
+
+    let hechos = 0;
+    for (const registro of pendientes) {
+      await db.collection("clima").add({ ...registro, creado: new Date().toISOString() });
+      hechos++;
+      relleno.style.width = `${Math.round((hechos / pendientes.length) * 100)}%`;
+      estado.textContent = `Cargando... ${hechos}/${pendientes.length}`;
+    }
+
+    const salteados = LLUVIAS_HISTORICO.length + HELADAS_HISTORICO.length - pendientes.length;
+    estado.textContent = `¡Listo! Se cargaron ${hechos} registros nuevos.` + (salteados > 0 ? ` (${salteados} ya estaban cargados, no se repitieron.)` : "");
+  } catch (err) {
+    estado.textContent = "Hubo un problema al cargar (revisá tu conexión). Podés volver a apretar el botón, no se va a duplicar lo que ya se cargó.";
+    boton.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
