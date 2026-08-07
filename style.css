@@ -801,6 +801,51 @@ textarea { resize: vertical; }
   font-size: 0.95rem;
 }
 
+.silos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.silo-card {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.silo-card.seleccionado {
+  outline: 2px solid var(--verde);
+  outline-offset: -2px;
+}
+
+.silo-numero {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--verde-oscuro);
+}
+
+.silo-cultivo {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--gris);
+  margin: 2px 0 6px;
+  min-height: 14px;
+}
+
+.silo-toneladas {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--gris);
+  margin-top: 4px;
+}
+
+.barra-silo { background: #6b8fb5; }
+
 .categoria-csv {
   background: white;
   border: 1px solid var(--borde);

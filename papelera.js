@@ -11,8 +11,14 @@ function renderPapelera() {
   const climaEliminado = (typeof climaCacheCompleto !== "undefined" ? climaCacheCompleto : [])
     .filter((c) => c.eliminado)
     .map((c) => ({ ...c, coleccion: "clima" }));
+  const silosEliminados = (typeof siloMovCacheCompleto !== "undefined" ? siloMovCacheCompleto : [])
+    .filter((m) => m.eliminado)
+    .map((m) => ({ ...m, coleccion: "siloMovimientos" }));
+  const silobolsasEliminadas = (typeof silobolsasCacheCompleto !== "undefined" ? silobolsasCacheCompleto : [])
+    .filter((b) => b.eliminado)
+    .map((b) => ({ ...b, coleccion: "silobolsas" }));
 
-  const todos = [...registrosEliminados, ...climaEliminado].sort((a, b) =>
+  const todos = [...registrosEliminados, ...climaEliminado, ...silosEliminados, ...silobolsasEliminadas].sort((a, b) =>
     (b.eliminadoEn || "").localeCompare(a.eliminadoEn || "")
   );
 
@@ -22,11 +28,20 @@ function renderPapelera() {
 }
 
 function renderTarjetaPapelera(r) {
-  const esClima = r.coleccion === "clima";
-  const nombreTipo = esClima
-    ? (typeof NOMBRES_CLIMA !== "undefined" ? NOMBRES_CLIMA[r.tipo] : r.tipo) || r.tipo
-    : (typeof NOMBRES_CATEGORIA !== "undefined" ? NOMBRES_CATEGORIA[r.tipo] : r.tipo) || r.tipo;
-  const contexto = esClima ? "Clima general" : `Lote: ${escapeHtml(r.lote || "")}`;
+  let nombreTipo, contexto;
+  if (r.coleccion === "clima") {
+    nombreTipo = (typeof NOMBRES_CLIMA !== "undefined" ? NOMBRES_CLIMA[r.tipo] : r.tipo) || r.tipo;
+    contexto = "Clima general";
+  } else if (r.coleccion === "siloMovimientos") {
+    nombreTipo = r.tipo === "entrada" ? "⬆️ Entrada a silo" : "⬇️ Salida de silo";
+    contexto = `Silo ${r.silo}`;
+  } else if (r.coleccion === "silobolsas") {
+    nombreTipo = `Silobolsa — ${escapeHtml(r.cultivo || "")}`;
+    contexto = r.ubicacion ? `Poscosecha: ${escapeHtml(r.ubicacion)}` : "Poscosecha";
+  } else {
+    nombreTipo = (typeof NOMBRES_CATEGORIA !== "undefined" ? NOMBRES_CATEGORIA[r.tipo] : r.tipo) || r.tipo;
+    contexto = `Lote: ${escapeHtml(r.lote || "")}`;
+  }
   return `
     <div class="registro-card">
       <div class="fila-top">
@@ -74,4 +89,12 @@ function purgarPapeleraVieja() {
   (typeof climaCacheCompleto !== "undefined" ? climaCacheCompleto : [])
     .filter((c) => c.eliminado && c.eliminadoEn && c.eliminadoEn < limiteISO)
     .forEach((c) => db.collection("clima").doc(c.id).delete().catch(() => {}));
+
+  (typeof siloMovCacheCompleto !== "undefined" ? siloMovCacheCompleto : [])
+    .filter((m) => m.eliminado && m.eliminadoEn && m.eliminadoEn < limiteISO)
+    .forEach((m) => db.collection("siloMovimientos").doc(m.id).delete().catch(() => {}));
+
+  (typeof silobolsasCacheCompleto !== "undefined" ? silobolsasCacheCompleto : [])
+    .filter((b) => b.eliminado && b.eliminadoEn && b.eliminadoEn < limiteISO)
+    .forEach((b) => db.collection("silobolsas").doc(b.id).delete().catch(() => {}));
 }

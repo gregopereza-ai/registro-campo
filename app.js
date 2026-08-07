@@ -109,6 +109,7 @@ function iniciarApp() {
   iniciarListenerRegistros();
   if (typeof iniciarListenerCampanas === "function") iniciarListenerCampanas();
   if (typeof iniciarListenerClima === "function") iniciarListenerClima();
+  if (typeof iniciarListenerPoscosecha === "function") iniciarListenerPoscosecha();
   cargarLotes()
     .then((lotes) => {
       lotesCache = lotes;
@@ -144,6 +145,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "mapa") dibujarMapa();
   if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (btn.dataset.tab === "feed" && typeof renderFeed === "function") renderFeed();
+  if (btn.dataset.tab === "poscosecha" && typeof renderPoscosecha === "function") renderPoscosecha();
   cerrarMenu();
 });
 

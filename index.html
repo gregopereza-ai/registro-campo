@@ -43,6 +43,7 @@
   <button class="tab-btn active" data-tab="mapa">🗺️ Mapa</button>
   <button class="tab-btn" data-tab="feed">📰 Feed</button>
   <button class="tab-btn" data-tab="clima">🌦️ Clima</button>
+  <button class="tab-btn" data-tab="poscosecha">🛢️ Poscosecha</button>
   <button class="tab-btn" data-tab="registros">📄 Registros</button>
   <button class="tab-btn" data-tab="papelera">🗑️ Papelera</button>
 </nav>
@@ -396,6 +397,68 @@
     <div id="detalle-dia-clima" class="detalle-dia-clima" hidden></div>
   </section>
 
+  <section id="tab-poscosecha" class="tab-panel">
+    <h2>🛢️ Poscosecha</h2>
+    <p class="ayuda-mapa">Planta de silos y silobolsa — no está atado a lote ni campaña.</p>
+
+    <div class="resumen-lluvias">
+      <div class="resumen-item">
+        <span class="resumen-valor" id="poscosecha-total-planta">0 tn</span>
+        <span class="resumen-etiqueta">En planta de silos</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="poscosecha-total-bolsa">0 tn</span>
+        <span class="resumen-etiqueta">En silobolsa</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-valor" id="poscosecha-total-general">0 tn</span>
+        <span class="resumen-etiqueta">Total</span>
+      </div>
+    </div>
+
+    <h3>Planta de Silos</h3>
+    <p class="ayuda-mapa">Tocá un silo para cargar una entrada o salida.</p>
+    <div class="silos-grid" id="silos-grid"></div>
+    <div id="detalle-silo" class="detalle-dia-clima" hidden></div>
+
+    <h3>Silobolsa</h3>
+    <button id="btn-nueva-silobolsa" class="btn-primary" type="button">+ Nueva silobolsa</button>
+    <form id="form-silobolsa" class="form-categoria" hidden>
+      <h3>Nueva silobolsa</h3>
+      <label>Fecha de armado
+        <input type="date" name="fecha" required>
+      </label>
+      <label>Cultivo
+        <select name="cultivo">
+          <option value="Soja">Soja</option>
+          <option value="Trigo">Trigo</option>
+          <option value="Maíz">Maíz</option>
+          <option value="Girasol">Girasol</option>
+        </select>
+      </label>
+      <label>Tipo
+        <select name="tipo">
+          <option value="Acopio">Acopio</option>
+          <option value="Semilla propia">Semilla propia</option>
+        </select>
+      </label>
+      <label>Toneladas
+        <input type="number" name="toneladas" min="0" step="0.1" required>
+      </label>
+      <label>Ubicación / nombre <span class="opcional">(para encontrarla en el campo)</span>
+        <input type="text" name="ubicacion" placeholder="Ej: Junto al galpón 2">
+      </label>
+      <label>Observaciones <span class="opcional">(opcional)</span>
+        <textarea name="observaciones" rows="2"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </form>
+
+    <div id="lista-silobolsas-activas"></div>
+    <button id="btn-ver-silobolsas-cerradas" class="btn-secundario" type="button">Ver silobolsas cerradas</button>
+    <div id="lista-silobolsas-cerradas" hidden></div>
+  </section>
+
   <section id="tab-registros" class="tab-panel">
     <h2>Reporte de lote</h2>
     <p class="ayuda-mapa">Elegí un lote y una campaña para descargar su avance completo en PDF.</p>
@@ -435,6 +498,7 @@
 <script src="clima.js"></script>
 <script src="papelera.js"></script>
 <script src="feed.js"></script>
+<script src="poscosecha.js"></script>
 <script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>
