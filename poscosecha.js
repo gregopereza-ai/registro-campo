@@ -29,6 +29,9 @@ let unsubscribeSilobolsas = null;
 
 let siloSeleccionado = null; // número del silo con el detalle abierto, o null
 let edicionSilobolsaActual = null; // id de la silobolsa en edición, o null
+let bolsaSalidaAbierta = null; // id de la silobolsa con el formulario de salida abierto, o null
+
+const CULTIVOS_POSCOSECHA = ["Soja", "Trigo", "Maíz", "Girasol"];
 
 function iniciarListenerPoscosecha() {
   if (unsubscribeSiloMov) return;
@@ -76,14 +79,62 @@ function calcularStockSilo(numero) {
   return { toneladas, cultivo: toneladas > 0 ? cultivo : null };
 }
 
+// Toneladas que le quedan a una silobolsa: lo cargado menos las salidas parciales ya registradas.
+function restanteSilobolsa(b) {
+  const salidas = (b.salidas || []).reduce((suma, s) => suma + (parseFloat(s.toneladas) || 0), 0);
+  return Math.max(0, Math.round(((parseFloat(b.toneladas) || 0) - salidas) * 10) / 10);
+}
+
+// Stock disponible por cereal: suma silos + silobolsas activas de Acopio.
+// La semilla propia NO se suma acá — es para sembrar, no está disponible para venta.
+function calcularStockPorCultivo() {
+  const stock = {};
+  CULTIVOS_POSCOSECHA.forEach((c) => (stock[c] = 0));
+  SILOS.forEach((s) => {
+    const { toneladas, cultivo } = calcularStockSilo(s.numero);
+    if (cultivo && stock[cultivo] != null) stock[cultivo] += toneladas;
+  });
+  let haySemillaPropia = false;
+  silobolsasCache
+    .filter((b) => !b.cerrada)
+    .forEach((b) => {
+      if (b.tipo === "Semilla propia") {
+        haySemillaPropia = true;
+        return;
+      }
+      if (b.cultivo && stock[b.cultivo] != null) stock[b.cultivo] += restanteSilobolsa(b);
+    });
+  return { stock, haySemillaPropia };
+}
+
+function renderResumenCereales() {
+  const { stock, haySemillaPropia } = calcularStockPorCultivo();
+  const total = Object.values(stock).reduce((a, b) => a + b, 0);
+  const filas = CULTIVOS_POSCOSECHA.map(
+    (c) => `
+      <div class="fila-cereal">
+        <span>${escapeHtml(c)}</span>
+        <span>${stock[c].toFixed(1)} tn</span>
+      </div>
+    `
+  ).join("");
+  document.getElementById("poscosecha-resumen-cereales").innerHTML =
+    filas +
+    `
+      <div class="fila-cereal fila-cereal-total">
+        <span>Total</span>
+        <span>${total.toFixed(1)} tn</span>
+      </div>
+    `;
+  document.getElementById("poscosecha-nota-semilla").hidden = !haySemillaPropia;
+}
+
 function renderPoscosecha() {
   const grid = document.getElementById("silos-grid");
   if (!grid) return;
 
-  let totalPlanta = 0;
   grid.innerHTML = SILOS.map((s) => {
     const { toneladas, cultivo } = calcularStockSilo(s.numero);
-    totalPlanta += toneladas;
     const pct = Math.min(100, Math.round((toneladas / s.capacidad) * 100));
     const seleccionado = siloSeleccionado === s.numero;
     return `
@@ -96,13 +147,7 @@ function renderPoscosecha() {
     `;
   }).join("");
 
-  document.getElementById("poscosecha-total-planta").textContent = `${totalPlanta.toFixed(1)} tn`;
-  const totalBolsa = silobolsasCache
-    .filter((b) => !b.cerrada)
-    .reduce((suma, b) => suma + (parseFloat(b.toneladas) || 0), 0);
-  document.getElementById("poscosecha-total-bolsa").textContent = `${totalBolsa.toFixed(1)} tn`;
-  document.getElementById("poscosecha-total-general").textContent = `${(totalPlanta + totalBolsa).toFixed(1)} tn`;
-
+  renderResumenCereales();
   renderDetalleSilo();
   renderSilobolsas();
 }
@@ -234,9 +279,15 @@ function renderSilobolsas() {
   document.getElementById("lista-silobolsas-cerradas").innerHTML = cerradas.length
     ? cerradas.map(renderTarjetaSilobolsa).join("")
     : '<p class="vacio">Todavía no cerraste ninguna silobolsa.</p>';
+
+  const fechaSalidaInput = document.querySelector(".form-salida-silobolsa [name='fecha']");
+  if (fechaSalidaInput) fechaSalidaInput.valueAsDate = new Date();
 }
 
 function renderTarjetaSilobolsa(b) {
+  const restante = restanteSilobolsa(b);
+  const salidas = b.salidas || [];
+  const mostrarFormSalida = !b.cerrada && bolsaSalidaAbierta === b.id;
   return `
     <div class="registro-card">
       <div class="fila-top">
@@ -245,16 +296,47 @@ function renderTarjetaSilobolsa(b) {
       </div>
       <dl>
         <dt>Ubicación</dt><dd>${escapeHtml(b.ubicacion || "—")}</dd>
-        <dt>Toneladas${b.cerrada ? " (estimadas)" : ""}</dt><dd>${parseFloat(b.toneladas || 0).toFixed(1)} tn</dd>
+        <dt>Toneladas cargadas</dt><dd>${parseFloat(b.toneladas || 0).toFixed(1)} tn</dd>
+        <dt>Toneladas restantes</dt><dd>${restante.toFixed(1)} tn</dd>
+        ${
+          salidas.length
+            ? `<dt>Salidas</dt><dd>${salidas
+                .map(
+                  (s) =>
+                    `${escapeHtml(s.fecha || "")}: ${parseFloat(s.toneladas || 0).toFixed(1)} tn${
+                      s.observaciones ? " — " + escapeHtml(s.observaciones) : ""
+                    }`
+                )
+                .join("<br>")}</dd>`
+            : ""
+        }
         ${b.cerrada ? `<dt>Cerrada el</dt><dd>${escapeHtml(b.fechaCierre || "")}</dd>` : ""}
-        ${b.cerrada && b.toneladasReales != null ? `<dt>Toneladas reales</dt><dd>${parseFloat(b.toneladasReales).toFixed(1)} tn</dd>` : ""}
         ${b.observaciones ? `<dt>Observaciones</dt><dd>${escapeHtml(b.observaciones)}</dd>` : ""}
       </dl>
       <div class="tarjeta-acciones">
+        ${!b.cerrada ? `<button class="btn-editar btn-toggle-salida-silobolsa" data-id="${b.id}">+ Salida</button>` : ""}
         ${!b.cerrada ? `<button class="btn-editar btn-cerrar-silobolsa" data-id="${b.id}">Cerrar</button>` : ""}
         <button class="btn-editar btn-editar-silobolsa" data-id="${b.id}">Editar</button>
         <button class="btn-eliminar btn-eliminar-silobolsa" data-id="${b.id}">Eliminar</button>
       </div>
+      ${
+        mostrarFormSalida
+          ? `
+        <form class="form-categoria form-salida-silobolsa" data-id="${b.id}">
+          <label>Fecha
+            <input type="date" name="fecha" required>
+          </label>
+          <label>Toneladas que salen
+            <input type="number" name="toneladas" min="0" max="${restante}" step="0.1" required>
+          </label>
+          <label>Observaciones <span class="opcional">(opcional)</span>
+            <input type="text" name="observaciones" placeholder="Ej: camión a acopio Tandil">
+          </label>
+          <button type="submit" class="btn-primary">Guardar salida</button>
+        </form>
+      `
+          : ""
+      }
     </div>
   `;
 }
@@ -305,7 +387,7 @@ document.getElementById("form-silobolsa").addEventListener("submit", (e) => {
         ...datos,
         cerrada: false,
         fechaCierre: null,
-        toneladasReales: null,
+        salidas: [],
         creado: new Date().toISOString(),
       });
   promesa
@@ -338,19 +420,44 @@ document.getElementById("btn-ver-silobolsas-cerradas").addEventListener("click",
   cont.hidden = !cont.hidden;
 });
 
+document.getElementById("lista-silobolsas-activas").addEventListener("submit", (e) => {
+  const form = e.target.closest(".form-salida-silobolsa");
+  if (!form) return;
+  e.preventDefault();
+  const id = form.dataset.id;
+  const bolsa = silobolsasCache.find((b) => b.id === id);
+  if (!bolsa) return;
+  const datos = Object.fromEntries(new FormData(form).entries());
+  const nuevaSalida = {
+    fecha: datos.fecha,
+    toneladas: parseFloat(datos.toneladas) || 0,
+    observaciones: datos.observaciones || "",
+  };
+  const salidas = [...(bolsa.salidas || []), nuevaSalida];
+  db.collection("silobolsas")
+    .doc(id)
+    .update({ salidas })
+    .then(() => {
+      bolsaSalidaAbierta = null;
+      mostrarToast("Salida guardada");
+    })
+    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
+});
+
 // --- Clicks de silobolsas y movimientos de silo (delegado en toda la pestaña) ---
 document.getElementById("tab-poscosecha").addEventListener("click", (e) => {
+  const btnToggleSalida = e.target.closest(".btn-toggle-salida-silobolsa");
+  if (btnToggleSalida) {
+    bolsaSalidaAbierta = bolsaSalidaAbierta === btnToggleSalida.dataset.id ? null : btnToggleSalida.dataset.id;
+    renderSilobolsas();
+    return;
+  }
   const btnCerrar = e.target.closest(".btn-cerrar-silobolsa");
   if (btnCerrar) {
-    const toneladasReales = prompt("¿Cuántas toneladas reales salieron? (dejá vacío si fue igual a lo estimado)");
-    if (toneladasReales === null) return;
+    if (!confirm("¿Cerrar esta silobolsa? Se considera vacía.")) return;
     db.collection("silobolsas")
       .doc(btnCerrar.dataset.id)
-      .update({
-        cerrada: true,
-        fechaCierre: new Date().toISOString().slice(0, 10),
-        toneladasReales: toneladasReales.trim() ? parseFloat(toneladasReales) : null,
-      })
+      .update({ cerrada: true, fechaCierre: new Date().toISOString().slice(0, 10) })
       .then(() => mostrarToast("Silobolsa cerrada"))
       .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
     return;
