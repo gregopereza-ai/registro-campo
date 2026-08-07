@@ -96,16 +96,102 @@ function renderResumenClima() {
   document.getElementById("heladas-anio").textContent = String(heladasAnio.length);
 }
 
-// --- Lista/historial ---
+// --- Calendario mensual ---
+const DIAS_SEMANA_CLIMA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MESES_CLIMA = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+let mesCalendarioClima = new Date();
+let diaSeleccionadoClima = null; // "YYYY-MM-DD" del día que se muestra en el detalle, o null
+
 function renderClima() {
   renderResumenClima();
-  const cont = document.getElementById("lista-clima");
+  renderCalendarioClima();
+}
+
+function renderCalendarioClima() {
+  const cont = document.getElementById("calendario-clima");
   if (!climaCache.length) {
+    document.getElementById("calendario-titulo").textContent = "";
     cont.innerHTML = '<p class="vacio">Todavía no hay datos de clima cargados.</p>';
+    document.getElementById("detalle-dia-clima").hidden = true;
     return;
   }
-  cont.innerHTML = climaCache.map(renderTarjetaClima).join("");
+
+  const anio = mesCalendarioClima.getFullYear();
+  const mes = mesCalendarioClima.getMonth();
+  document.getElementById("calendario-titulo").textContent = `${MESES_CLIMA[mes]} ${anio}`;
+
+  const primerDiaSemana = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const hoyStr = new Date().toISOString().slice(0, 10);
+
+  const porFecha = {};
+  climaCache.forEach((c) => {
+    if (!porFecha[c.fecha]) porFecha[c.fecha] = [];
+    porFecha[c.fecha].push(c);
+  });
+
+  let celdas = DIAS_SEMANA_CLIMA.map((d) => `<div class="dia-semana-nombre">${d}</div>`).join("");
+  for (let i = 0; i < primerDiaSemana; i++) celdas += `<div class="dia-calendario vacio-relleno"></div>`;
+
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fecha = `${anio}-${String(mes + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const registros = porFecha[fecha] || [];
+    const lluvia = registros.find((r) => r.tipo === "lluvia");
+    const helada = registros.find((r) => r.tipo === "helada");
+    const clases = ["dia-calendario"];
+    if (fecha === hoyStr) clases.push("es-hoy");
+    if (registros.length) clases.push("con-datos");
+    if (fecha === diaSeleccionadoClima) clases.push("seleccionado");
+    celdas += `
+      <div class="${clases.join(" ")}" data-fecha="${fecha}">
+        <span class="dia-numero">${d}</span>
+        ${lluvia ? `<span class="chip-dia chip-lluvia">🌧️ ${Math.round(lluvia.mm)}mm</span>` : ""}
+        ${helada ? `<span class="chip-dia chip-helada">❄️ ${Math.round(helada.tempMin)}°</span>` : ""}
+      </div>
+    `;
+  }
+  cont.innerHTML = celdas;
+
+  actualizarDetalleDiaClima();
 }
+
+function actualizarDetalleDiaClima() {
+  const cont = document.getElementById("detalle-dia-clima");
+  if (!diaSeleccionadoClima) {
+    cont.hidden = true;
+    return;
+  }
+  const registros = climaCache.filter((c) => c.fecha === diaSeleccionadoClima);
+  if (!registros.length) {
+    diaSeleccionadoClima = null;
+    cont.hidden = true;
+    return;
+  }
+  const [anio, mes, dia] = diaSeleccionadoClima.split("-");
+  cont.hidden = false;
+  cont.innerHTML = `<h3 class="detalle-dia-titulo">📅 ${dia}/${mes}/${anio}</h3>` + registros.map(renderTarjetaClima).join("");
+}
+
+document.getElementById("calendario-clima").addEventListener("click", (e) => {
+  const celda = e.target.closest(".dia-calendario.con-datos");
+  if (!celda) return;
+  diaSeleccionadoClima = celda.dataset.fecha === diaSeleccionadoClima ? null : celda.dataset.fecha;
+  renderCalendarioClima();
+});
+
+document.getElementById("btn-mes-anterior").addEventListener("click", () => {
+  mesCalendarioClima = new Date(mesCalendarioClima.getFullYear(), mesCalendarioClima.getMonth() - 1, 1);
+  renderCalendarioClima();
+});
+
+document.getElementById("btn-mes-siguiente").addEventListener("click", () => {
+  mesCalendarioClima = new Date(mesCalendarioClima.getFullYear(), mesCalendarioClima.getMonth() + 1, 1);
+  renderCalendarioClima();
+});
 
 function renderTarjetaClima(c) {
   const valor =
@@ -149,7 +235,7 @@ function editarClima(id, tipo) {
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-document.getElementById("lista-clima").addEventListener("click", (e) => {
+document.getElementById("detalle-dia-clima").addEventListener("click", (e) => {
   const btnEditar = e.target.closest(".btn-editar");
   if (btnEditar) {
     editarClima(btnEditar.dataset.id, btnEditar.dataset.tipo);

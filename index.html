@@ -314,8 +314,13 @@
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
 
-    <h3>Historial</h3>
-    <div id="lista-clima"></div>
+    <div class="calendario-nav">
+      <button type="button" id="btn-mes-anterior" class="btn-secundario" aria-label="Mes anterior">◀</button>
+      <span id="calendario-titulo" class="calendario-titulo"></span>
+      <button type="button" id="btn-mes-siguiente" class="btn-secundario" aria-label="Mes siguiente">▶</button>
+    </div>
+    <div id="calendario-clima" class="calendario-clima"></div>
+    <div id="detalle-dia-clima" class="detalle-dia-clima" hidden></div>
   </section>
 
   <section id="tab-registros" class="tab-panel">

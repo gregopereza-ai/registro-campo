@@ -614,6 +614,107 @@ textarea { resize: vertical; }
   color: var(--gris);
 }
 
+.calendario-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.calendario-nav .btn-secundario {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+}
+
+.calendario-titulo {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--verde-oscuro);
+  text-transform: capitalize;
+}
+
+.calendario-clima {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.dia-semana-nombre {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gris);
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+
+.dia-calendario {
+  min-height: 54px;
+  border-radius: 6px;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.dia-calendario.vacio-relleno { visibility: hidden; }
+
+.dia-numero {
+  font-size: 0.78rem;
+  color: var(--gris);
+}
+
+.dia-calendario.es-hoy .dia-numero {
+  color: white;
+  background: var(--verde);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.dia-calendario.con-datos {
+  background: var(--fondo);
+  cursor: pointer;
+}
+
+.dia-calendario.seleccionado {
+  outline: 2px solid var(--verde);
+  outline-offset: -2px;
+}
+
+.chip-dia {
+  font-size: 0.62rem;
+  line-height: 1.2;
+  padding: 1px 4px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.chip-lluvia { background: #dbe9f5; color: #1c5a8a; }
+.chip-helada { background: #e2eef7; color: #3a5a75; }
+
+.detalle-dia-clima {
+  background: white;
+  border: 1px solid var(--verde);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.detalle-dia-titulo {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
 .categoria-csv {
   background: white;
   border: 1px solid var(--borde);
