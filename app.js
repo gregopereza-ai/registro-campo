@@ -12,6 +12,8 @@ function escapeHtml(str) {
 }
 
 // --- Registros: array sincronizado en vivo con Firestore ---
+// registrosCacheCompleto incluye los borrados (para la Papelera); registrosCache es lo que usa el resto de la app.
+let registrosCacheCompleto = [];
 let registrosCache = [];
 let unsubscribeRegistros = null;
 
@@ -23,7 +25,8 @@ function iniciarListenerRegistros() {
   if (unsubscribeRegistros) return;
   unsubscribeRegistros = db.collection("registros").onSnapshot(
     (snapshot) => {
-      registrosCache = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      registrosCacheCompleto = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      registrosCache = registrosCacheCompleto.filter((r) => !r.eliminado);
       onRegistrosActualizados();
     },
     () => mostrarToast("No se pudo sincronizar con la nube")
@@ -34,6 +37,9 @@ function onRegistrosActualizados() {
   if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
   if (document.getElementById("tab-ficha").classList.contains("active") && typeof renderTimeline === "function") {
     renderTimeline();
+  }
+  if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
+    renderPapelera();
   }
 }
 
@@ -105,6 +111,9 @@ function iniciarApp() {
       lotesCache = lotes;
       dibujarMapa();
       if (typeof poblarSelectorLotes === "function") poblarSelectorLotes();
+      setTimeout(() => {
+        if (typeof purgarPapeleraVieja === "function") purgarPapeleraVieja();
+      }, 1000);
     })
     .catch(() => mostrarToast("No se pudo cargar el mapa de lotes"));
 }
@@ -130,6 +139,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   btn.classList.add("active");
   document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
   if (btn.dataset.tab === "mapa") dibujarMapa();
+  if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
   cerrarMenu();
 });
 

@@ -43,6 +43,7 @@
   <button class="tab-btn active" data-tab="mapa">🗺️ Mapa</button>
   <button class="tab-btn" data-tab="clima">🌦️ Clima</button>
   <button class="tab-btn" data-tab="registros">📄 Registros</button>
+  <button class="tab-btn" data-tab="papelera">🗑️ Papelera</button>
 </nav>
 
 <main>
@@ -149,6 +150,10 @@
 
     <form id="form-pulverizacion" class="form-categoria" hidden>
       <h3>Nueva pulverización</h3>
+      <label class="checkbox-plan">
+        <input type="checkbox" name="esPlan">
+        📋 Es un plan (todavía no se hizo)
+      </label>
       <label>Momento
         <select name="momento">
           <option value="Barbecho">Barbecho</option>
@@ -174,6 +179,10 @@
 
     <form id="form-siembra" class="form-categoria" hidden>
       <h3>Nueva siembra</h3>
+      <label class="checkbox-plan">
+        <input type="checkbox" name="esPlan">
+        📋 Es un plan (todavía no se hizo)
+      </label>
       <label>Fecha de siembra
         <input type="date" name="fecha" required>
       </label>
@@ -339,6 +348,12 @@
     </div>
   </section>
 
+  <section id="tab-papelera" class="tab-panel">
+    <h2>Papelera</h2>
+    <p class="ayuda-mapa">Lo que borrás queda acá por 30 días antes de eliminarse en serio, por si fue un error.</p>
+    <div id="lista-papelera"></div>
+  </section>
+
 </main>
 
 </div>
@@ -354,6 +369,7 @@
 <script src="lotes.js"></script>
 <script src="ficha.js"></script>
 <script src="clima.js"></script>
+<script src="papelera.js"></script>
 <script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>

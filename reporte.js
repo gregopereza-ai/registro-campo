@@ -96,7 +96,7 @@ function detalleTextoPDF(r) {
 // --- Generación del PDF ---
 function generarReportePDF(lote, cultivo, temporada) {
   const registros = cargarRegistros()
-    .filter((r) => r.lote === lote && r.cultivo === cultivo && r.temporada === temporada)
+    .filter((r) => r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.estado !== "planificada")
     .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
 
   if (registros.length === 0) {

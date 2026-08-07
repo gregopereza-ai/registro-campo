@@ -57,7 +57,10 @@ function agregarFilaProducto(valores = {}) {
   const fila = document.createElement("div");
   fila.className = "producto-fila";
   fila.innerHTML = `
-    <input type="text" class="producto-nombre" placeholder="Producto (ej: Glifosato)" value="${(valores.nombre || "").replace(/"/g, "&quot;")}">
+    <div class="autocomplete-wrap">
+      <input type="text" class="producto-nombre" placeholder="Producto (ej: Glifosato)" value="${(valores.nombre || "").replace(/"/g, "&quot;")}" autocomplete="off">
+      <div class="autocomplete-lista" hidden></div>
+    </div>
     <input type="number" class="producto-dosis" placeholder="Dosis" step="0.01" value="${valores.dosis || ""}">
     <select class="producto-unidad">
       <option value="lt" ${valores.unidad === "lt" ? "selected" : ""}>lt</option>
@@ -72,7 +75,76 @@ function agregarFilaProducto(valores = {}) {
 
 document.getElementById("btn-agregar-producto").addEventListener("click", () => agregarFilaProducto());
 
+// --- Catálogo de insumos: autocompletar con lo ya usado antes (sin colección aparte) ---
+function nombresUsados(campo) {
+  const nombres = new Set();
+  cargarRegistros().forEach((r) => {
+    if (campo === "productos" && r.tipo === "pulverizacion") {
+      (r.productos || []).forEach((p) => { if (p.nombre) nombres.add(p.nombre); });
+    }
+    if (campo === "fertilizantes" && r.tipo === "siembra") {
+      (r.fertilizantes || []).forEach((f) => { if (f.nombre) nombres.add(f.nombre); });
+    }
+  });
+  return [...nombres].sort((a, b) => a.localeCompare(b));
+}
+
+function unidadUsadaPara(nombreProducto) {
+  const regs = cargarRegistros()
+    .filter((r) => r.tipo === "pulverizacion")
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  for (const r of regs) {
+    const p = (r.productos || []).find((p) => p.nombre === nombreProducto);
+    if (p) return p.unidad;
+  }
+  return null;
+}
+
+function mostrarAutocompletar(input, opciones) {
+  const lista = input.closest(".autocomplete-wrap").querySelector(".autocomplete-lista");
+  const texto = input.value.trim().toLowerCase();
+  if (!texto) {
+    lista.innerHTML = "";
+    lista.hidden = true;
+    return;
+  }
+  const coincidencias = opciones
+    .filter((o) => o.toLowerCase().includes(texto) && o.toLowerCase() !== texto)
+    .slice(0, 6);
+  if (!coincidencias.length) {
+    lista.innerHTML = "";
+    lista.hidden = true;
+    return;
+  }
+  lista.innerHTML = coincidencias.map((o) => `<div class="autocomplete-item">${escapeHtml(o)}</div>`).join("");
+  lista.hidden = false;
+}
+
+function ocultarAutocompletar(input) {
+  input.closest(".autocomplete-wrap").querySelector(".autocomplete-lista").hidden = true;
+}
+
+document.getElementById("productos-lista").addEventListener("input", (e) => {
+  if (!e.target.classList.contains("producto-nombre")) return;
+  mostrarAutocompletar(e.target, nombresUsados("productos"));
+});
+
+document.getElementById("productos-lista").addEventListener("focusout", (e) => {
+  if (!e.target.classList.contains("producto-nombre")) return;
+  setTimeout(() => ocultarAutocompletar(e.target), 150);
+});
+
 document.getElementById("productos-lista").addEventListener("click", (e) => {
+  const sugerencia = e.target.closest(".autocomplete-item");
+  if (sugerencia) {
+    const input = sugerencia.closest(".autocomplete-wrap").querySelector(".producto-nombre");
+    input.value = sugerencia.textContent;
+    ocultarAutocompletar(input);
+    const unidad = unidadUsadaPara(sugerencia.textContent);
+    const selectUnidad = input.closest(".producto-fila").querySelector(".producto-unidad");
+    if (unidad && selectUnidad) selectUnidad.value = unidad;
+    return;
+  }
   const btn = e.target.closest(".btn-quitar-producto");
   if (!btn) return;
   btn.closest(".producto-fila").remove();
@@ -83,7 +155,10 @@ function agregarFilaFertilizante(valores = {}) {
   const fila = document.createElement("div");
   fila.className = "producto-fila";
   fila.innerHTML = `
-    <input type="text" class="fertilizante-nombre" placeholder="Fertilizante (ej: Urea)" value="${(valores.nombre || "").replace(/"/g, "&quot;")}">
+    <div class="autocomplete-wrap">
+      <input type="text" class="fertilizante-nombre" placeholder="Fertilizante (ej: Urea)" value="${(valores.nombre || "").replace(/"/g, "&quot;")}" autocomplete="off">
+      <div class="autocomplete-lista" hidden></div>
+    </div>
     <input type="number" class="fertilizante-dosis" placeholder="Kg/ha" step="0.1" value="${valores.dosis || ""}">
     <button type="button" class="btn-quitar-producto">✕</button>
   `;
@@ -92,7 +167,24 @@ function agregarFilaFertilizante(valores = {}) {
 
 document.getElementById("btn-agregar-fertilizante").addEventListener("click", () => agregarFilaFertilizante());
 
+document.getElementById("fertilizantes-lista").addEventListener("input", (e) => {
+  if (!e.target.classList.contains("fertilizante-nombre")) return;
+  mostrarAutocompletar(e.target, nombresUsados("fertilizantes"));
+});
+
+document.getElementById("fertilizantes-lista").addEventListener("focusout", (e) => {
+  if (!e.target.classList.contains("fertilizante-nombre")) return;
+  setTimeout(() => ocultarAutocompletar(e.target), 150);
+});
+
 document.getElementById("fertilizantes-lista").addEventListener("click", (e) => {
+  const sugerencia = e.target.closest(".autocomplete-item");
+  if (sugerencia) {
+    const input = sugerencia.closest(".autocomplete-wrap").querySelector(".fertilizante-nombre");
+    input.value = sugerencia.textContent;
+    ocultarAutocompletar(input);
+    return;
+  }
   const btn = e.target.closest(".btn-quitar-producto");
   if (!btn) return;
   btn.closest(".producto-fila").remove();
@@ -244,7 +336,7 @@ function actualizarEtiquetaCampana() {
 // --- Avance de campaña: planificado / sembrado / cosechado / producción ---
 function sumarCampo(tipo, campo, lote, cultivo, temporada) {
   return cargarRegistros()
-    .filter((r) => r.tipo === tipo && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada)
+    .filter((r) => r.tipo === tipo && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.estado !== "planificada")
     .reduce((suma, r) => suma + (parseFloat(r[campo]) || 0), 0);
 }
 
@@ -373,6 +465,9 @@ function editarRegistro(id) {
   if (registro.tipo === "malezas") {
     mostrarPreviewFoto(registro.foto || null);
   }
+  if (form.elements["esPlan"]) {
+    form.elements["esPlan"].checked = registro.estado === "planificada";
+  }
   if (registro.tipo === "pulverizacion") {
     (registro.productos || []).forEach((p) => agregarFilaProducto(p));
     if (!document.getElementById("productos-lista").children.length) agregarFilaProducto();
@@ -434,7 +529,7 @@ function buscarSiembraActual() {
   const campana = campanaActivaDe(loteActual);
   if (!campana) return null;
   const registros = cargarRegistros()
-    .filter((r) => r.tipo === "siembra" && r.lote === loteActual && r.cultivo === campana.cultivo && r.temporada === campana.temporada)
+    .filter((r) => r.tipo === "siembra" && r.lote === loteActual && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.estado !== "planificada")
     .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
   return registros[0] || null;
 }
@@ -509,6 +604,8 @@ document.getElementById("form-pulverizacion").addEventListener("submit", (e) => 
   const form = e.target;
   const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
+  const estado = datos.esPlan ? "planificada" : "confirmada";
+  delete datos.esPlan;
   const productos = [...document.querySelectorAll("#productos-lista .producto-fila")]
     .map((fila) => ({
       nombre: fila.querySelector(".producto-nombre").value.trim(),
@@ -516,14 +613,14 @@ document.getElementById("form-pulverizacion").addEventListener("submit", (e) => 
       unidad: fila.querySelector(".producto-unidad").value,
     }))
     .filter((p) => p.nombre);
-  const promesa = guardarRegistroCategoria("pulverizacion", { ...datos, productos });
+  const promesa = guardarRegistroCategoria("pulverizacion", { ...datos, productos, estado });
   if (!promesa) return;
   promesa
     .then(() => {
       salirModoEdicion(form);
       document.getElementById("productos-lista").innerHTML = "";
       form.hidden = true;
-      mostrarToast(editando ? "Pulverización actualizada" : "Pulverización guardada");
+      mostrarToast(editando ? (estado === "planificada" ? "Plan actualizado" : "Pulverización actualizada") : (estado === "planificada" ? "Plan guardado" : "Pulverización guardada"));
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -534,6 +631,8 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
   const form = e.target;
   const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
+  const estado = datos.esPlan ? "planificada" : "confirmada";
+  delete datos.esPlan;
   const cultivo = document.getElementById("campana-cultivo").value;
   const { semillasHaBruto, semillasHaViables } = calcularSemillasSiembra(datos, cultivo);
   const fertilizantes = [...document.querySelectorAll("#fertilizantes-lista .producto-fila")]
@@ -542,7 +641,7 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
       dosis: fila.querySelector(".fertilizante-dosis").value,
     }))
     .filter((f) => f.nombre && f.dosis);
-  const promesa = guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables, fertilizantes });
+  const promesa = guardarRegistroCategoria("siembra", { ...datos, semillasHaBruto, semillasHaViables, fertilizantes, estado });
   if (!promesa) return;
   promesa
     .then(() => {
@@ -550,7 +649,7 @@ document.getElementById("form-siembra").addEventListener("submit", (e) => {
       document.getElementById("siembra-resultado").textContent = "";
       document.getElementById("fertilizantes-lista").innerHTML = "";
       form.hidden = true;
-      mostrarToast(editando ? "Siembra actualizada" : "Siembra guardada");
+      mostrarToast(editando ? (estado === "planificada" ? "Plan actualizado" : "Siembra actualizada") : (estado === "planificada" ? "Plan guardado" : "Siembra guardada"));
       renderTimeline();
     })
     .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
@@ -616,14 +715,17 @@ function renderTimeline() {
 
 function renderTarjetaTimeline(r) {
   const detalle = detalleParaMostrar(r);
+  const esPlan = r.estado === "planificada";
   return `
-    <div class="registro-card">
+    <div class="registro-card${esPlan ? " es-plan" : ""}">
       <div class="fila-top">
         <span class="tipo-badge">${escapeHtml(NOMBRES_CATEGORIA[r.tipo] || r.tipo)}</span>
         <span class="lote-fecha">${escapeHtml(r.fecha || "")}</span>
       </div>
+      ${esPlan ? '<span class="badge-plan">📋 PLANIFICADA</span>' : ""}
       <dl>${detalle}</dl>
       <div class="tarjeta-acciones">
+        ${esPlan ? `<button class="btn-confirmar" data-id="${r.id}">✓ Confirmar</button>` : ""}
         <button class="btn-editar" data-id="${r.id}">Editar</button>
         <button class="btn-eliminar" data-id="${r.id}">Eliminar</button>
       </div>
@@ -663,6 +765,15 @@ document.getElementById("ficha-timeline").addEventListener("click", (e) => {
     if (ventana) ventana.document.write(`<img src="${foto.src}" style="max-width:100%">`);
     return;
   }
+  const btnConfirmar = e.target.closest(".btn-confirmar");
+  if (btnConfirmar) {
+    db.collection("registros")
+      .doc(btnConfirmar.dataset.id)
+      .update({ estado: "confirmada" })
+      .then(() => mostrarToast("Confirmado"))
+      .catch(() => mostrarToast("No se pudo confirmar (revisá tu conexión)"));
+    return;
+  }
   const btnEditar = e.target.closest(".btn-editar");
   if (btnEditar) {
     editarRegistro(btnEditar.dataset.id);
@@ -670,10 +781,10 @@ document.getElementById("ficha-timeline").addEventListener("click", (e) => {
   }
   const btn = e.target.closest(".btn-eliminar");
   if (!btn) return;
-  if (!confirm("¿Eliminar este registro?")) return;
+  if (!confirm("¿Eliminar este registro? Vas a poder recuperarlo desde la Papelera.")) return;
   db.collection("registros")
     .doc(btn.dataset.id)
-    .delete()
+    .update({ eliminado: true, eliminadoEn: new Date().toISOString() })
     .then(() => renderTimeline())
     .catch(() => mostrarToast("No se pudo eliminar (revisá tu conexión)"));
 });

@@ -268,6 +268,47 @@ textarea { resize: vertical; }
   color: #b33;
 }
 
+.btn-confirmar {
+  background: white;
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.registro-card.es-plan {
+  border: 1px dashed #8a8a8a;
+  background: #fbfaf5;
+}
+
+.badge-plan {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a6a2a;
+  background: #fbeecb;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.checkbox-plan {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  background: #fbf7ea;
+  border: 1px solid #e6dcb8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.checkbox-plan input { width: auto; }
+
 .vacio {
   text-align: center;
   color: var(--gris);
@@ -518,8 +559,9 @@ textarea { resize: vertical; }
   gap: 6px;
 }
 
+.producto-fila .autocomplete-wrap { flex: 2; position: relative; }
 .producto-fila .producto-nombre,
-.producto-fila .fertilizante-nombre { flex: 2; }
+.producto-fila .fertilizante-nombre { width: 100%; }
 .producto-fila .producto-dosis,
 .producto-fila .fertilizante-dosis { flex: 1; min-width: 70px; }
 .producto-fila .producto-unidad { flex: 0 0 70px; }
@@ -533,6 +575,33 @@ textarea { resize: vertical; }
   flex: 0 0 auto;
   width: 40px;
 }
+
+.autocomplete-lista {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: white;
+  border: 1px solid var(--verde);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+.autocomplete-lista[hidden] { display: none; }
+
+.autocomplete-item {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--fondo);
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover,
+.autocomplete-item:active { background: var(--fondo); }
 
 .resultado-calculado {
   background: var(--fondo);

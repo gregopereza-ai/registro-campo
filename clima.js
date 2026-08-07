@@ -2,6 +2,8 @@
 const NOMBRES_CLIMA = { lluvia: "Lluvia", helada: "Helada" };
 const ICONOS_CLIMA = { lluvia: "🌧️", helada: "❄️" };
 
+// climaCacheCompleto incluye los borrados (para la Papelera); climaCache es lo que usa el resto de la app.
+let climaCacheCompleto = [];
 let climaCache = [];
 let unsubscribeClima = null;
 let edicionClimaActual = null; // { id, tipo } del registro en edición, o null
@@ -10,10 +12,14 @@ function iniciarListenerClima() {
   if (unsubscribeClima) return;
   unsubscribeClima = db.collection("clima").onSnapshot(
     (snapshot) => {
-      climaCache = snapshot.docs
+      climaCacheCompleto = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+      climaCache = climaCacheCompleto.filter((c) => !c.eliminado);
       renderClima();
+      if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
+        renderPapelera();
+      }
     },
     () => mostrarToast("No se pudo sincronizar el clima con la nube")
   );
@@ -243,9 +249,9 @@ document.getElementById("detalle-dia-clima").addEventListener("click", (e) => {
   }
   const btn = e.target.closest(".btn-eliminar");
   if (!btn) return;
-  if (!confirm("¿Eliminar este registro?")) return;
+  if (!confirm("¿Eliminar este registro? Vas a poder recuperarlo desde la Papelera.")) return;
   db.collection("clima")
     .doc(btn.dataset.id)
-    .delete()
+    .update({ eliminado: true, eliminadoEn: new Date().toISOString() })
     .catch(() => mostrarToast("No se pudo eliminar (revisá tu conexión)"));
 });
