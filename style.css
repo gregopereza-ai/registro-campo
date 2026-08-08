@@ -818,13 +818,16 @@ textarea { resize: vertical; }
 .tabla-stock th,
 .tabla-stock td {
   padding: 8px 10px;
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
 }
 
-.tabla-stock th:first-child,
+.tabla-stock th.num,
+.tabla-stock td.num {
+  text-align: right;
+}
+
 .tabla-stock td:first-child {
-  text-align: left;
   font-weight: 600;
 }
 

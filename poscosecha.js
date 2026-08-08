@@ -123,9 +123,9 @@ function renderResumenCereales() {
     (c) => `
       <tr>
         <td>${escapeHtml(c)}</td>
-        <td>${stockSilos[c].toFixed(1)}</td>
-        <td>${stockBolsa[c].toFixed(1)}</td>
-        <td>${stockTotal[c].toFixed(1)}</td>
+        <td class="num">${stockSilos[c].toFixed(1)}</td>
+        <td class="num">${stockBolsa[c].toFixed(1)}</td>
+        <td class="num">${stockTotal[c].toFixed(1)}</td>
       </tr>
     `
   ).join("");
@@ -133,9 +133,9 @@ function renderResumenCereales() {
   const filaTotal = `
     <tr class="fila-total-tabla">
       <td>Total</td>
-      <td>${sumar(stockSilos).toFixed(1)}</td>
-      <td>${sumar(stockBolsa).toFixed(1)}</td>
-      <td>${sumar(stockTotal).toFixed(1)}</td>
+      <td class="num">${sumar(stockSilos).toFixed(1)}</td>
+      <td class="num">${sumar(stockBolsa).toFixed(1)}</td>
+      <td class="num">${sumar(stockTotal).toFixed(1)}</td>
     </tr>
   `;
   document.getElementById("tabla-stock-cuerpo").innerHTML = filas + filaTotal;

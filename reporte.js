@@ -23,7 +23,99 @@ function poblarSelectorLotes() {
     '<option value="">— Elegí un lote —</option>' +
     nombres.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
   poblarSelectorCampanas("");
+
+  const selectHistorial = document.getElementById("historial-filtro-lote");
+  if (selectHistorial) {
+    const valorActual = selectHistorial.value;
+    selectHistorial.innerHTML =
+      '<option value="">Todos</option>' +
+      nombres.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+    if (nombres.includes(valorActual)) selectHistorial.value = valorActual;
+  }
 }
+
+// --- Historial de rendimiento: comparar cosechas entre campañas, por lote o por variedad ---
+function buscarVariedadDeCosecha(cosecha) {
+  const siembra = cargarRegistros()
+    .filter(
+      (r) =>
+        r.tipo === "siembra" &&
+        r.lote === cosecha.lote &&
+        r.cultivo === cosecha.cultivo &&
+        r.temporada === cosecha.temporada &&
+        r.estado !== "planificada"
+    )
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))[0];
+  return siembra ? siembra.variedad : null;
+}
+
+function obtenerHistorialRendimiento() {
+  return cargarRegistros()
+    .filter((r) => r.tipo === "cosecha" && r.rendimientoKgHa)
+    .map((r) => ({
+      lote: r.lote,
+      cultivo: r.cultivo,
+      temporada: r.temporada,
+      fecha: r.fecha,
+      rendimiento: parseFloat(r.rendimientoKgHa) || 0,
+      variedad: buscarVariedadDeCosecha(r),
+    }))
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+}
+
+function poblarFiltroVariedad() {
+  const select = document.getElementById("historial-filtro-variedad");
+  if (!select) return;
+  const valorActual = select.value;
+  const variedades = [...new Set(obtenerHistorialRendimiento().map((h) => h.variedad).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+  select.innerHTML =
+    '<option value="">Todas</option>' + variedades.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  if (variedades.includes(valorActual)) select.value = valorActual;
+}
+
+function renderHistorialRendimiento() {
+  const cuerpo = document.getElementById("historial-rendimiento-cuerpo");
+  if (!cuerpo) return;
+  poblarFiltroVariedad();
+
+  const loteFiltro = document.getElementById("historial-filtro-lote").value;
+  const variedadFiltro = document.getElementById("historial-filtro-variedad").value;
+
+  let datos = obtenerHistorialRendimiento();
+  if (loteFiltro) datos = datos.filter((d) => d.lote === loteFiltro);
+  if (variedadFiltro) datos = datos.filter((d) => d.variedad === variedadFiltro);
+
+  cuerpo.innerHTML = datos.length
+    ? datos
+        .map(
+          (d) => `
+        <tr>
+          <td>${escapeHtml(d.lote)}</td>
+          <td>${escapeHtml(d.cultivo)} ${escapeHtml(d.temporada)}</td>
+          <td>${d.variedad ? escapeHtml(d.variedad) : "—"}</td>
+          <td class="num">${Math.round(d.rendimiento).toLocaleString("es-AR")}</td>
+        </tr>
+      `
+        )
+        .join("")
+    : '<tr><td colspan="4" class="vacio">Todavía no hay cosechas cargadas.</td></tr>';
+
+  const promedioCont = document.getElementById("historial-promedio");
+  if (datos.length) {
+    const promedio = datos.reduce((suma, d) => suma + d.rendimiento, 0) / datos.length;
+    promedioCont.textContent = `Promedio: ${Math.round(promedio).toLocaleString("es-AR")} kg/ha (${datos.length} cosecha${
+      datos.length === 1 ? "" : "s"
+    })`;
+    promedioCont.hidden = false;
+  } else {
+    promedioCont.hidden = true;
+  }
+}
+
+document.getElementById("historial-filtro-lote").addEventListener("change", renderHistorialRendimiento);
+document.getElementById("historial-filtro-variedad").addEventListener("change", renderHistorialRendimiento);
 
 function poblarSelectorCampanas(lote) {
   const select = document.getElementById("reporte-campana");

@@ -406,9 +406,9 @@
         <thead>
           <tr>
             <th>Cereal</th>
-            <th>Planta Silos</th>
-            <th>Silobolsa</th>
-            <th>Total</th>
+            <th class="num">Planta Silos</th>
+            <th class="num">Silobolsa</th>
+            <th class="num">Total</th>
           </tr>
         </thead>
         <tbody id="tabla-stock-cuerpo"></tbody>
@@ -472,6 +472,33 @@
       </label>
       <button type="button" id="btn-reporte-pdf" class="btn-primary">Descargar reporte PDF</button>
       <p id="reporte-estado" class="ayuda-mapa"></p>
+    </div>
+
+    <div class="categoria-csv">
+      <h3>Historial de rendimiento</h3>
+      <p class="ayuda-mapa">Comparar cómo vino rindiendo un lote o una variedad a través de las campañas.</p>
+      <div class="reporte-bloque">
+        <label>Lote
+          <select id="historial-filtro-lote"><option value="">Todos</option></select>
+        </label>
+        <label>Variedad
+          <select id="historial-filtro-variedad"><option value="">Todas</option></select>
+        </label>
+      </div>
+      <p id="historial-promedio" class="ayuda-mapa" hidden></p>
+      <div class="tabla-stock-wrap">
+        <table class="tabla-stock">
+          <thead>
+            <tr>
+              <th>Lote</th>
+              <th>Campaña</th>
+              <th>Variedad</th>
+              <th class="num">Kg/ha</th>
+            </tr>
+          </thead>
+          <tbody id="historial-rendimiento-cuerpo"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 

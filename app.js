@@ -44,6 +44,9 @@ function onRegistrosActualizados() {
   if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
     renderPapelera();
   }
+  if (document.getElementById("tab-registros").classList.contains("active") && typeof renderHistorialRendimiento === "function") {
+    renderHistorialRendimiento();
+  }
 }
 
 // --- Panel general de avance de campaña (debajo del mapa) ---
@@ -146,6 +149,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (btn.dataset.tab === "feed" && typeof renderFeed === "function") renderFeed();
   if (btn.dataset.tab === "poscosecha" && typeof renderPoscosecha === "function") renderPoscosecha();
+  if (btn.dataset.tab === "registros" && typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
   cerrarMenu();
 });
 
