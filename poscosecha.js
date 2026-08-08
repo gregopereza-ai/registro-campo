@@ -117,34 +117,28 @@ function calcularStockPorCultivo() {
   return { stockSilos, stockBolsa, stockTotal, haySemillaPropia };
 }
 
-function tablaResumenCereales(titulo, stock) {
-  const total = Object.values(stock).reduce((a, b) => a + b, 0);
-  const filas = CULTIVOS_POSCOSECHA.map(
-    (c) => `
-      <div class="fila-cereal">
-        <span>${escapeHtml(c)}</span>
-        <span>${stock[c].toFixed(1)} tn</span>
-      </div>
-    `
-  ).join("");
-  return `
-    <h4 class="resumen-cereales-titulo">${escapeHtml(titulo)}</h4>
-    <div class="resumen-cereales">
-      ${filas}
-      <div class="fila-cereal fila-cereal-total">
-        <span>Total</span>
-        <span>${total.toFixed(1)} tn</span>
-      </div>
-    </div>
-  `;
-}
-
 function renderResumenCereales() {
   const { stockSilos, stockBolsa, stockTotal, haySemillaPropia } = calcularStockPorCultivo();
-  document.getElementById("poscosecha-resumen-cereales").innerHTML =
-    tablaResumenCereales("Silobolsa", stockBolsa) +
-    tablaResumenCereales("Planta de Silos", stockSilos) +
-    tablaResumenCereales("Total", stockTotal);
+  const filas = CULTIVOS_POSCOSECHA.map(
+    (c) => `
+      <tr>
+        <td>${escapeHtml(c)}</td>
+        <td>${stockSilos[c].toFixed(1)}</td>
+        <td>${stockBolsa[c].toFixed(1)}</td>
+        <td>${stockTotal[c].toFixed(1)}</td>
+      </tr>
+    `
+  ).join("");
+  const sumar = (obj) => Object.values(obj).reduce((a, b) => a + b, 0);
+  const filaTotal = `
+    <tr class="fila-total-tabla">
+      <td>Total</td>
+      <td>${sumar(stockSilos).toFixed(1)}</td>
+      <td>${sumar(stockBolsa).toFixed(1)}</td>
+      <td>${sumar(stockTotal).toFixed(1)}</td>
+    </tr>
+  `;
+  document.getElementById("tabla-stock-cuerpo").innerHTML = filas + filaTotal;
   document.getElementById("poscosecha-nota-semilla").hidden = !haySemillaPropia;
 }
 

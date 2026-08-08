@@ -801,40 +801,48 @@ textarea { resize: vertical; }
   font-size: 0.95rem;
 }
 
-.resumen-cereales-titulo {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--verde-oscuro);
-  text-transform: uppercase;
-  margin: 12px 0 4px;
-}
-
-#poscosecha-resumen-cereales > .resumen-cereales-titulo:first-child { margin-top: 0; }
-
-.resumen-cereales {
+.tabla-stock-wrap {
+  overflow-x: auto;
   background: white;
   border: 1px solid var(--borde);
   border-radius: 10px;
-  padding: 6px 14px;
   margin-bottom: 8px;
 }
 
-.fila-cereal {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--fondo);
-  font-size: 0.92rem;
+.tabla-stock {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
 }
 
-.fila-cereal:last-child { border-bottom: none; }
+.tabla-stock th,
+.tabla-stock td {
+  padding: 8px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
 
-.fila-cereal-total {
+.tabla-stock th:first-child,
+.tabla-stock td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+.tabla-stock thead th {
+  color: var(--gris);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla-stock tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--fondo);
+}
+
+.fila-total-tabla td {
   font-weight: 700;
   color: var(--verde-oscuro);
-  border-top: 1px solid var(--borde);
-  margin-top: 2px;
-  padding-top: 10px;
+  border-top: 2px solid var(--borde);
 }
 
 .silos-grid {
