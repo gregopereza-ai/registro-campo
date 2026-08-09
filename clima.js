@@ -78,6 +78,8 @@ document.getElementById("form-helada").addEventListener("submit", (e) => {
   const form = e.target;
   const editando = !!edicionClimaActual;
   const datos = Object.fromEntries(new FormData(form).entries());
+  // Las heladas siempre son bajo cero: lo que se escribe es la cantidad de grados, se guarda en negativo.
+  datos.tempMin = -Math.abs(parseFloat(datos.tempMin) || 0);
   guardarClima("helada", datos)
     .then(() => {
       salirModoEdicionClima(form);
@@ -238,6 +240,10 @@ function editarClima(id, tipo) {
   Object.keys(registro).forEach((campo) => {
     if (form.elements[campo]) form.elements[campo].value = registro[campo];
   });
+  if (tipo === "helada") {
+    // El campo pide "grados bajo cero" (siempre positivo); el dato guardado está en negativo.
+    form.elements["tempMin"].value = Math.abs(parseFloat(registro.tempMin) || 0);
+  }
   edicionClimaActual = { id: registro.id, tipo };
   const boton = form.querySelector('button[type="submit"]');
   if (boton) boton.textContent = "Guardar cambios";
