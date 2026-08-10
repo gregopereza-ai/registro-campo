@@ -88,6 +88,7 @@ function renderTarjetaAvanceGeneral(g) {
   const etiquetaSembrado = g.hectareasPlan
     ? `Sembrado: ${g.sembrado.toFixed(1)} de ${g.hectareasPlan.toFixed(1)} ha planificadas (${pctSembrado}%)`
     : `Sembrado: ${g.sembrado.toFixed(1)} ha (${pctSembrado}%)`;
+  const rinde = g.cosechado > 0 ? g.produccion / g.cosechado : null;
   return `
     <div class="avance-general-card">
       <div class="fila-top">
@@ -102,7 +103,7 @@ function renderTarjetaAvanceGeneral(g) {
         <span class="barra-etiqueta">Cosechado: ${g.cosechado.toFixed(1)} ha (${pctCosechado}%)</span>
         <div class="barra-fondo"><div class="barra-relleno barra-cosecha" style="width:${pctCosechado}%"></div></div>
       </div>
-      ${g.produccion > 0 ? `<p class="avance-produccion">Producción: ${g.produccion.toFixed(1)} t</p>` : ""}
+      ${g.produccion > 0 ? `<p class="avance-produccion">Producción: ${g.produccion.toFixed(1)} t${rinde != null ? ` — Rinde: ${rinde.toFixed(2)} t/ha` : ""}</p>` : ""}
     </div>
   `;
 }
