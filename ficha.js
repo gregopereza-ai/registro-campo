@@ -1,6 +1,6 @@
 const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado"],
-  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "observaciones", "contratista"],
+  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "hectareasReales", "observaciones", "contratista"],
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
   cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista"],
@@ -17,6 +17,7 @@ const ETIQUETAS_CAMPO = {
   plantasM2: "Plantas/m²", coeficienteLogro: "Coeficiente de logro (%)",
   fechaFloracion: "Fecha floración", rendimientoKgHa: "Rendimiento (kg/ha)", humedad: "Humedad (%)",
   contratista: "Contratista", tipoLaboreo: "Tipo de laboreo", rendimientoEstimado: "Rendimiento estimado (kg/ha)",
+  hectareasReales: "Hectáreas pulverizadas (real)",
 };
 
 const NOMBRES_CATEGORIA = {
@@ -846,9 +847,16 @@ function buscarEstimacionRendimiento(r) {
 
 function detalleParaMostrar(r) {
   if (r.tipo === "pulverizacion") {
-    const productosTexto = (r.productos || []).map((p) => `${p.nombre} — ${p.dosis} ${p.unidad}`).join("; ");
+    const haReales = parseFloat(r.hectareasReales) || 0;
+    const productosTexto = (r.productos || [])
+      .map((p) => {
+        const total = haReales > 0 ? ` (total: ${(parseFloat(p.dosis) * haReales).toLocaleString("es-AR", { maximumFractionDigits: 1 })} ${p.unidad})` : "";
+        return `${p.nombre} — ${p.dosis} ${p.unidad}/ha${total}`;
+      })
+      .join("; ");
     const filas = [
       ["Momento", r.momento],
+      ["Hectáreas pulverizadas (real)", haReales > 0 ? `${haReales.toLocaleString("es-AR")} ha` : ""],
       ["Productos", productosTexto],
       ["Contratista", r.contratista],
       ["Observaciones", r.observaciones],

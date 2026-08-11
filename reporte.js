@@ -163,9 +163,16 @@ document.getElementById("reporte-lote").addEventListener("change", (e) => {
 // --- Detalle en texto plano por categoría (para el PDF) ---
 function detalleTextoPDF(r) {
   if (r.tipo === "pulverizacion") {
-    const productos = (r.productos || []).map((p) => `${p.nombre} — ${p.dosis} ${p.unidad}`).join("; ");
+    const haReales = parseFloat(r.hectareasReales) || 0;
+    const productos = (r.productos || [])
+      .map((p) => {
+        const total = haReales > 0 ? ` (total: ${(parseFloat(p.dosis) * haReales).toLocaleString("es-AR", { maximumFractionDigits: 1 })} ${p.unidad})` : "";
+        return `${p.nombre} — ${p.dosis} ${p.unidad}/ha${total}`;
+      })
+      .join("; ");
     return [
       r.momento && `Momento: ${r.momento}`,
+      haReales > 0 && `Hectáreas pulverizadas (real): ${haReales.toLocaleString("es-AR")} ha`,
       productos && `Productos: ${productos}`,
       r.contratista && `Contratista: ${r.contratista}`,
       r.observaciones && `Observaciones: ${r.observaciones}`,
