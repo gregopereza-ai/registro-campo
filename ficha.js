@@ -469,6 +469,95 @@ function actualizarAvanceCampana() {
   document.getElementById("avance-produccion").textContent = `${produccion.toFixed(1)} t`;
 }
 
+// --- Clima durante el ciclo del cultivo: desde la siembra confirmada hasta la cosecha (o hasta hoy) ---
+const NOMBRES_MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function calcularClimaPorMes(lote, cultivo, temporada) {
+  const siembras = cargarRegistros().filter(
+    (r) => r.tipo === "siembra" && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.estado !== "planificada" && r.fecha
+  );
+  if (!siembras.length) return null;
+  const fechaInicio = siembras.map((r) => r.fecha).sort()[0];
+
+  const cosechas = cargarRegistros().filter(
+    (r) => r.tipo === "cosecha" && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.fecha
+  );
+  const fechaFin = cosechas.length ? cosechas.map((r) => r.fecha).sort().slice(-1)[0] : new Date().toISOString().slice(0, 10);
+  if (fechaFin < fechaInicio) return null;
+
+  const meses = [];
+  let [anio, mes] = fechaInicio.split("-").map(Number);
+  const [anioFin, mesFin] = fechaFin.split("-").map(Number);
+  while (anio < anioFin || (anio === anioFin && mes <= mesFin)) {
+    meses.push({ anio, mes });
+    mes++;
+    if (mes > 12) {
+      mes = 1;
+      anio++;
+    }
+  }
+
+  const climaTodo = typeof climaCache !== "undefined" ? climaCache : [];
+  const filas = meses.map(({ anio, mes }) => {
+    const inicioMes = `${anio}-${String(mes).padStart(2, "0")}-01`;
+    const finMes = `${anio}-${String(mes).padStart(2, "0")}-31`;
+    const desde = inicioMes < fechaInicio ? fechaInicio : inicioMes;
+    const hasta = finMes > fechaFin ? fechaFin : finMes;
+    const lluvia = climaTodo
+      .filter((c) => c.tipo === "lluvia" && c.fecha >= desde && c.fecha <= hasta)
+      .reduce((suma, c) => suma + (parseFloat(c.mm) || 0), 0);
+    const heladas = climaTodo.filter((c) => c.tipo === "helada" && c.fecha >= desde && c.fecha <= hasta).length;
+    return { anio, mes, lluvia, heladas };
+  });
+
+  const totalLluvia = filas.reduce((s, f) => s + f.lluvia, 0);
+  const totalHeladas = filas.reduce((s, f) => s + f.heladas, 0);
+  return { fechaInicio, fechaFin, filas, totalLluvia, totalHeladas };
+}
+
+function tablaClimaCicloHTML(datos) {
+  if (!datos || !datos.filas.length) return "";
+  const filasHtml = datos.filas
+    .map(
+      (f) => `
+        <tr>
+          <td>${NOMBRES_MESES_CORTOS[f.mes - 1]} ${f.anio}</td>
+          <td class="num">${f.lluvia.toFixed(1)} mm</td>
+          <td class="num">${f.heladas}</td>
+        </tr>
+      `
+    )
+    .join("");
+  return `
+    <h3>☔❄️ Clima durante el ciclo</h3>
+    <div class="tabla-stock-wrap">
+      <table class="tabla-stock">
+        <thead><tr><th>Mes</th><th class="num">Lluvia</th><th class="num">Heladas</th></tr></thead>
+        <tbody>
+          ${filasHtml}
+          <tr class="fila-total-tabla">
+            <td>Total</td>
+            <td class="num">${datos.totalLluvia.toFixed(1)} mm</td>
+            <td class="num">${datos.totalHeladas}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function actualizarClimaCiclo(cultivo, temporada) {
+  const cont = document.getElementById("campana-clima");
+  const datos = calcularClimaPorMes(loteActual, cultivo, temporada);
+  if (!datos) {
+    cont.hidden = true;
+    cont.innerHTML = "";
+    return;
+  }
+  cont.hidden = false;
+  cont.innerHTML = tablaClimaCicloHTML(datos);
+}
+
 document.getElementById("btn-guardar-campana").addEventListener("click", () => {
   const cultivo = document.getElementById("campana-cultivo").value;
   const temporada = document.getElementById("campana-temporada").value.trim();
@@ -807,8 +896,10 @@ function renderTimeline() {
   const campana = campanaActivaDe(loteActual);
   if (!campana) {
     cont.innerHTML = '<p class="vacio">Asigná una campaña para empezar a cargar datos.</p>';
+    document.getElementById("campana-clima").hidden = true;
     return;
   }
+  actualizarClimaCiclo(campana.cultivo, campana.temporada);
   const registros = cargarRegistros()
     .filter((r) => r.lote === loteActual && r.cultivo === campana.cultivo && r.temporada === campana.temporada)
     .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
@@ -967,4 +1058,5 @@ function renderTimelineDeCampana(cultivo, temporada) {
       <button type="button" id="btn-volver-campana-activa" class="btn-secundario">Volver a la actual</button>
     </p>` + (registros.length ? registros.map(renderTarjetaTimeline).join("") : '<p class="vacio">Sin registros.</p>');
   document.getElementById("btn-volver-campana-activa").addEventListener("click", renderTimeline);
+  actualizarClimaCiclo(cultivo, temporada);
 }

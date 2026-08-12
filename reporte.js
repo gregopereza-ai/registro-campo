@@ -312,6 +312,28 @@ function generarReportePDF(lote, cultivo, temporada) {
     y += 6;
   }
 
+  // --- Clima durante el ciclo ---
+  if (typeof calcularClimaPorMes === "function") {
+    const climaCiclo = calcularClimaPorMes(lote, cultivo, temporada);
+    if (climaCiclo && climaCiclo.filas.length) {
+      saltoDePaginaSiHaceFalta(10);
+      lineaTexto("Clima durante el ciclo", margen, 11, [47, 109, 60], true);
+      y += 6;
+      doc.setFontSize(9.5);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont(undefined, "normal");
+      climaCiclo.filas.forEach((f) => {
+        saltoDePaginaSiHaceFalta(5);
+        doc.text(`${NOMBRES_MESES_CORTOS[f.mes - 1]} ${f.anio}: ${f.lluvia.toFixed(1)} mm — ${f.heladas} helada${f.heladas === 1 ? "" : "s"}`, margen, y);
+        y += 5;
+      });
+      saltoDePaginaSiHaceFalta(6);
+      doc.setFont(undefined, "bold");
+      doc.text(`Total: ${climaCiclo.totalLluvia.toFixed(1)} mm — ${climaCiclo.totalHeladas} helada${climaCiclo.totalHeladas === 1 ? "" : "s"}`, margen, y);
+      y += 10;
+    }
+  }
+
   // --- Barra ACTIVIDADES ---
   saltoDePaginaSiHaceFalta(14);
   doc.setFillColor(32, 75, 41);
