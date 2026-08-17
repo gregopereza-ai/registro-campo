@@ -82,10 +82,16 @@ function renderHistorialRendimiento() {
 
   const loteFiltro = document.getElementById("historial-filtro-lote").value;
   const variedadFiltro = document.getElementById("historial-filtro-variedad").value;
+  const botonPdf = document.getElementById("btn-historial-pdf");
 
-  let datos = obtenerHistorialRendimiento();
-  if (loteFiltro) datos = datos.filter((d) => d.lote === loteFiltro);
-  if (variedadFiltro) datos = datos.filter((d) => d.variedad === variedadFiltro);
+  if (!loteFiltro || !variedadFiltro) {
+    cuerpo.innerHTML = '<tr><td colspan="4" class="vacio">Elegí un lote y una variedad para ver el historial.</td></tr>';
+    document.getElementById("historial-promedio").hidden = true;
+    if (botonPdf) botonPdf.hidden = true;
+    return;
+  }
+
+  const datos = obtenerHistorialRendimiento().filter((d) => d.lote === loteFiltro && d.variedad === variedadFiltro);
 
   cuerpo.innerHTML = datos.length
     ? datos
@@ -100,7 +106,7 @@ function renderHistorialRendimiento() {
       `
         )
         .join("")
-    : '<tr><td colspan="4" class="vacio">Todavía no hay cosechas cargadas.</td></tr>';
+    : '<tr><td colspan="4" class="vacio">No hay cosechas para ese lote y esa variedad.</td></tr>';
 
   const promedioCont = document.getElementById("historial-promedio");
   if (datos.length) {
@@ -109,13 +115,94 @@ function renderHistorialRendimiento() {
       datos.length === 1 ? "" : "s"
     })`;
     promedioCont.hidden = false;
+    if (botonPdf) botonPdf.hidden = false;
   } else {
     promedioCont.hidden = true;
+    if (botonPdf) botonPdf.hidden = true;
   }
 }
 
 document.getElementById("historial-filtro-lote").addEventListener("change", renderHistorialRendimiento);
 document.getElementById("historial-filtro-variedad").addEventListener("change", renderHistorialRendimiento);
+
+document.getElementById("btn-historial-pdf").addEventListener("click", () => {
+  const loteFiltro = document.getElementById("historial-filtro-lote").value;
+  const variedadFiltro = document.getElementById("historial-filtro-variedad").value;
+  if (!loteFiltro || !variedadFiltro) return;
+  const datos = obtenerHistorialRendimiento().filter((d) => d.lote === loteFiltro && d.variedad === variedadFiltro);
+  if (!datos.length) {
+    mostrarToast("No hay datos para generar el PDF");
+    return;
+  }
+  generarPDFHistorialRendimiento(loteFiltro, variedadFiltro, datos);
+});
+
+function generarPDFHistorialRendimiento(lote, variedad, datos) {
+  const doc = new jspdf.jsPDF();
+  const anchoPagina = doc.internal.pageSize.getWidth();
+  const altoPagina = doc.internal.pageSize.getHeight();
+  const margen = 15;
+  const margenInferior = 20;
+  let y = margen;
+
+  function saltoDePaginaSiHaceFalta(necesario) {
+    if (y + necesario > altoPagina - margenInferior) {
+      doc.addPage();
+      y = margen;
+    }
+  }
+  function lineaTexto(texto, x, tamano, color, negrita) {
+    doc.setFontSize(tamano);
+    doc.setTextColor(color[0], color[1], color[2]);
+    doc.setFont(undefined, negrita ? "bold" : "normal");
+    doc.text(texto, x, y);
+  }
+
+  lineaTexto("Establecimiento Zogoibi S.A.", margen, 16, [47, 109, 60], true);
+  doc.setFontSize(9);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Fecha de generación: ${formatearFecha(new Date().toISOString().slice(0, 10))}`, anchoPagina - margen, y, { align: "right" });
+  y += 7;
+  lineaTexto("Historial de rendimiento", margen, 12, [90, 90, 90], false);
+  y += 9;
+
+  doc.setDrawColor(210, 210, 200);
+  doc.line(margen, y, anchoPagina - margen, y);
+  y += 8;
+
+  lineaTexto(`${lote} — ${variedad}`, margen, 12, [30, 30, 30], true);
+  y += 10;
+
+  const promedio = datos.reduce((suma, d) => suma + d.rendimiento, 0) / datos.length;
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont(undefined, "bold");
+  doc.text(`Promedio: ${Math.round(promedio).toLocaleString("es-AR")} kg/ha (${datos.length} cosecha${datos.length === 1 ? "" : "s"})`, margen, y);
+  y += 10;
+
+  saltoDePaginaSiHaceFalta(14);
+  doc.setFillColor(32, 75, 41);
+  doc.rect(margen, y, anchoPagina - margen * 2, 8, "F");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, "bold");
+  doc.text("CAMPAÑA", margen + 3, y + 5.5);
+  doc.text("KG/HA", anchoPagina - margen - 25, y + 5.5);
+  y += 14;
+
+  datos.forEach((d) => {
+    saltoDePaginaSiHaceFalta(7);
+    doc.setFontSize(9.5);
+    doc.setTextColor(40, 40, 40);
+    doc.setFont(undefined, "normal");
+    doc.text(`${d.cultivo} ${d.temporada}`, margen, y);
+    doc.text(Math.round(d.rendimiento).toLocaleString("es-AR"), anchoPagina - margen, y, { align: "right" });
+    y += 7;
+  });
+
+  doc.save(`historial-rendimiento-${lote}-${variedad}.pdf`);
+}
 
 function poblarSelectorCampanas(lote) {
   const select = document.getElementById("reporte-campana");
