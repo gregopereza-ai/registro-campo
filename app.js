@@ -44,8 +44,9 @@ function onRegistrosActualizados() {
   if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
     renderPapelera();
   }
-  if (document.getElementById("tab-registros").classList.contains("active") && typeof renderHistorialRendimiento === "function") {
-    renderHistorialRendimiento();
+  if (document.getElementById("tab-registros").classList.contains("active")) {
+    if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
+    if (typeof renderContratistasBloque === "function") renderContratistasBloque();
   }
 }
 
@@ -114,6 +115,7 @@ function iniciarApp() {
   if (typeof iniciarListenerCampanas === "function") iniciarListenerCampanas();
   if (typeof iniciarListenerClima === "function") iniciarListenerClima();
   if (typeof iniciarListenerPoscosecha === "function") iniciarListenerPoscosecha();
+  if (typeof iniciarListenerTarifas === "function") iniciarListenerTarifas();
   cargarLotes()
     .then((lotes) => {
       lotesCache = lotes;
@@ -150,7 +152,10 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (btn.dataset.tab === "feed" && typeof renderFeed === "function") renderFeed();
   if (btn.dataset.tab === "poscosecha" && typeof renderPoscosecha === "function") renderPoscosecha();
-  if (btn.dataset.tab === "registros" && typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
+  if (btn.dataset.tab === "registros") {
+    if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
+    if (typeof renderContratistasBloque === "function") renderContratistasBloque();
+  }
   cerrarMenu();
 });
 

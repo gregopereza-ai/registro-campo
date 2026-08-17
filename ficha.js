@@ -4,7 +4,7 @@ const CAMPOS_CATEGORIA = {
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
   cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista"],
-  laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "contratista", "observaciones"],
+  laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "hectareas", "contratista", "observaciones"],
 };
 
 const ETIQUETAS_CAMPO = {

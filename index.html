@@ -322,6 +322,9 @@
       <label>Fecha
         <input type="date" name="fecha" required>
       </label>
+      <label>Hectáreas <span class="opcional">(opcional)</span>
+        <input type="number" name="hectareas" min="0" step="0.1">
+      </label>
       <label>Contratista <span class="opcional">(opcional)</span>
         <div class="autocomplete-wrap">
           <input type="text" id="laboreo-contratista" name="contratista" placeholder="Ej: Labranzas Suárez" autocomplete="off">
@@ -505,6 +508,64 @@
         </table>
       </div>
     </div>
+
+    <div class="categoria-csv">
+      <h3>Resumen por contratista</h3>
+      <p class="ayuda-mapa">Hectáreas trabajadas y monto a pagar, por contratista y campaña.</p>
+      <div class="reporte-bloque">
+        <label>Contratista
+          <select id="contratista-filtro-nombre"><option value="">— Elegí un contratista —</option></select>
+        </label>
+        <label>Campaña
+          <select id="contratista-filtro-campana"><option value="">— Elegí una campaña —</option></select>
+        </label>
+        <label>Categoría
+          <select id="contratista-filtro-categoria">
+            <option value="">— Elegí una categoría —</option>
+            <option value="siembra">Siembra</option>
+            <option value="cosecha">Cosecha</option>
+            <option value="pulverizacion">Pulverización</option>
+            <option value="laboreo">Laboreo</option>
+          </select>
+        </label>
+        <label>Desde <span class="opcional">(opcional)</span>
+          <input type="date" id="contratista-filtro-desde">
+        </label>
+        <label>Hasta <span class="opcional">(opcional)</span>
+          <input type="date" id="contratista-filtro-hasta">
+        </label>
+      </div>
+
+      <div id="contratista-tarifa-bloque" hidden>
+        <span id="contratista-tarifa-texto" class="campana-actual-label"></span>
+        <button type="button" id="btn-editar-tarifa" class="btn-secundario">✏️</button>
+        <form id="form-tarifa" class="form-categoria" hidden>
+          <label>Tarifa (USD/ha)
+            <input type="number" id="input-tarifa" min="0" step="0.01">
+          </label>
+          <button type="submit" class="btn-primary">Guardar tarifa</button>
+        </form>
+      </div>
+
+      <div id="contratista-resultado" hidden>
+        <div class="resumen-lluvias">
+          <div class="resumen-item">
+            <span class="resumen-valor" id="contratista-total-ha">0 ha</span>
+            <span class="resumen-etiqueta">Hectáreas</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-valor" id="contratista-total-usd">US$ 0</span>
+            <span class="resumen-etiqueta">Monto</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-valor" id="contratista-total-tareas">0</span>
+            <span class="resumen-etiqueta">Tareas</span>
+          </div>
+        </div>
+        <div id="contratista-lista-actividades"></div>
+        <button type="button" id="btn-contratista-pdf" class="btn-primary btn-ancho">Descargar PDF</button>
+      </div>
+    </div>
   </section>
 
   <section id="tab-papelera" class="tab-panel">
@@ -532,6 +593,7 @@
 <script src="feed.js"></script>
 <script src="poscosecha.js"></script>
 <script src="reporte.js"></script>
+<script src="contratistas.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
