@@ -432,6 +432,25 @@ function generarReportePDF(lote, cultivo, temporada) {
     }
   }
 
+  // --- Cobertura verde durante el ciclo ---
+  if (typeof calcularCoberturaCiclo === "function") {
+    const coberturaCiclo = calcularCoberturaCiclo(lote, cultivo, temporada);
+    if (coberturaCiclo) {
+      saltoDePaginaSiHaceFalta(10);
+      lineaTexto("Cobertura verde durante el ciclo", margen, 11, [47, 109, 60], true);
+      y += 6;
+      doc.setFontSize(9.5);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont(undefined, "normal");
+      coberturaCiclo.forEach((f) => {
+        saltoDePaginaSiHaceFalta(5);
+        doc.text(`${f.fecha}: ${f.coberturaVerde}%`, margen, y);
+        y += 5;
+      });
+      y += 5;
+    }
+  }
+
   // --- Barra ACTIVIDADES ---
   saltoDePaginaSiHaceFalta(14);
   doc.setFillColor(32, 75, 41);

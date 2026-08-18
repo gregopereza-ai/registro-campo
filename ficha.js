@@ -1,5 +1,5 @@
 const CAMPOS_CATEGORIA = {
-  malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado"],
+  malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado", "coberturaVerde"],
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "hectareasReales", "observaciones", "contratista", "tarifaUsdHa"],
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista", "tarifaUsdHa"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "variedad", "plantasM2", "coeficienteLogro"],
@@ -19,6 +19,7 @@ const ETIQUETAS_CAMPO = {
   contratista: "Contratista", tipoLaboreo: "Tipo de laboreo", rendimientoEstimado: "Rendimiento estimado (kg/ha)",
   hectareasReales: "Hectáreas pulverizadas (real)",
   tarifaUsdHa: "Tarifa (USD/ha)",
+  coberturaVerde: "Cobertura verde (%)",
 };
 
 const NOMBRES_CATEGORIA = {
@@ -248,6 +249,89 @@ document.getElementById("fertilizantes-lista").addEventListener("click", (e) => 
 
 // --- Foto de Monitoreo: se comprime en el celular antes de guardarla ---
 let fotoActual = null; // dataURL (string) de la foto lista para guardar, o null
+let coberturaVerdeActual = null; // % calculado de la foto actual, o null si no corresponde calcularlo
+
+// Primera fecha de conteo de Emergencia cargada para esta campaña — antes de esa fecha el
+// cultivo todavía no emergió, así que no tiene sentido medir cobertura verde de una foto.
+function fechaEmergenciaDe(lote, cultivo, temporada) {
+  const registros = cargarRegistros()
+    .filter((r) => r.tipo === "emergencia" && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.fecha)
+    .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  return registros[0] ? registros[0].fecha : null;
+}
+
+// Estima el % de cobertura verde de una foto: por cada punto de la imagen, compara cuánto verde
+// tiene contra el rojo y el azul (mismo método que usa la app agrícola "Canopeo") — sirve como
+// indicador de tendencia, no es una medición exacta.
+function calcularCoberturaVerde(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("No se pudo analizar la imagen"));
+    img.onload = () => {
+      const lado = 300; // no hace falta resolución completa para estimar el %
+      let { width, height } = img;
+      if (width > height && width > lado) {
+        height = Math.round((height * lado) / width);
+        width = lado;
+      } else if (height > lado) {
+        width = Math.round((width * lado) / height);
+        height = lado;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      const { data } = ctx.getImageData(0, 0, width, height);
+      let verdes = 0;
+      let total = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        total++;
+        if (g === 0) continue;
+        const exG = 2 * g - r - b; // índice de exceso de verde
+        if (r / g < 0.95 && b / g < 0.95 && exG > 20) verdes++;
+      }
+      resolve(total ? Math.round((verdes / total) * 100) : null);
+    };
+    img.src = dataUrl;
+  });
+}
+
+// Recalcula (o explica por qué no) la cobertura verde de la foto actual del form de Monitoreo,
+// según la fecha cargada y la primera Emergencia de la campaña activa.
+function actualizarCoberturaVerdeMonitoreo() {
+  const estado = document.getElementById("malezas-cobertura-estado");
+  coberturaVerdeActual = null;
+  if (!fotoActual) {
+    estado.textContent = "";
+    return;
+  }
+  const campana = campanaActivaDe(loteActual);
+  if (!campana) {
+    estado.textContent = "";
+    return;
+  }
+  const fechaForm = document.getElementById("form-malezas").elements["fecha"].value;
+  const fechaEmergencia = fechaEmergenciaDe(loteActual, campana.cultivo, campana.temporada);
+  if (!fechaEmergencia) {
+    estado.textContent = "Todavía no hay una Emergencia cargada para esta campaña — la cobertura verde se calcula recién a partir de esa fecha.";
+    return;
+  }
+  if (!fechaForm || fechaForm < fechaEmergencia) {
+    estado.textContent = "Esta foto es de antes de la emergencia — no se calcula cobertura verde.";
+    return;
+  }
+  estado.textContent = "Calculando cobertura verde...";
+  calcularCoberturaVerde(fotoActual)
+    .then((pct) => {
+      coberturaVerdeActual = pct;
+      estado.textContent = pct != null ? `🌿 Cobertura verde estimada: ${pct}%` : "";
+    })
+    .catch(() => {
+      estado.textContent = "";
+    });
+}
 
 function comprimirImagen(archivo) {
   return new Promise((resolve, reject) => {
@@ -287,10 +371,13 @@ function mostrarPreviewFoto(dataUrl) {
     img.src = dataUrl;
     preview.hidden = false;
     boton.hidden = true;
+    actualizarCoberturaVerdeMonitoreo();
   } else {
     img.src = "";
     preview.hidden = true;
     boton.hidden = false;
+    coberturaVerdeActual = null;
+    document.getElementById("malezas-cobertura-estado").textContent = "";
   }
 }
 
@@ -316,6 +403,10 @@ document.getElementById("malezas-foto-input").addEventListener("change", (e) => 
 });
 
 document.getElementById("btn-quitar-foto").addEventListener("click", () => mostrarPreviewFoto(null));
+
+document.getElementById("form-malezas").addEventListener("input", (e) => {
+  if (e.target.name === "fecha" && fotoActual) actualizarCoberturaVerdeMonitoreo();
+});
 
 // --- Meta del lote: nombre, ambiente, hectáreas (oficiales u obtenidas del mapa) ---
 function actualizarMetaFicha() {
@@ -563,6 +654,49 @@ function actualizarClimaCiclo(cultivo, temporada) {
   cont.innerHTML = tablaClimaCicloHTML(datos);
 }
 
+function calcularCoberturaCiclo(lote, cultivo, temporada) {
+  const filas = cargarRegistros()
+    .filter(
+      (r) =>
+        r.tipo === "malezas" &&
+        r.lote === lote &&
+        r.cultivo === cultivo &&
+        r.temporada === temporada &&
+        r.coberturaVerde !== undefined &&
+        r.coberturaVerde !== ""
+    )
+    .map((r) => ({ fecha: r.fecha, coberturaVerde: parseFloat(r.coberturaVerde) }))
+    .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  return filas.length ? filas : null;
+}
+
+function tablaCoberturaCicloHTML(filas) {
+  const filasHtml = filas
+    .map((f) => `<tr><td>${escapeHtml(f.fecha || "")}</td><td class="num">${f.coberturaVerde}%</td></tr>`)
+    .join("");
+  return `
+    <h3>🌿 Cobertura verde durante el ciclo</h3>
+    <div class="tabla-stock-wrap">
+      <table class="tabla-stock">
+        <thead><tr><th>Fecha</th><th class="num">Cobertura</th></tr></thead>
+        <tbody>${filasHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function actualizarCoberturaCiclo(cultivo, temporada) {
+  const cont = document.getElementById("campana-cobertura");
+  const filas = calcularCoberturaCiclo(loteActual, cultivo, temporada);
+  if (!filas) {
+    cont.hidden = true;
+    cont.innerHTML = "";
+    return;
+  }
+  cont.hidden = false;
+  cont.innerHTML = tablaCoberturaCicloHTML(filas);
+}
+
 document.getElementById("btn-guardar-campana").addEventListener("click", () => {
   const cultivo = document.getElementById("campana-cultivo").value;
   const temporada = document.getElementById("campana-temporada").value.trim();
@@ -807,6 +941,7 @@ document.getElementById("form-malezas").addEventListener("submit", (e) => {
   const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
   datos.foto = fotoActual || "";
+  datos.coberturaVerde = coberturaVerdeActual != null ? coberturaVerdeActual : "";
   const promesa = guardarRegistroCategoria("malezas", datos);
   if (!promesa) return;
   promesa
@@ -941,9 +1076,11 @@ function renderTimeline() {
   if (!campana) {
     cont.innerHTML = '<p class="vacio">Asigná una campaña para empezar a cargar datos.</p>';
     document.getElementById("campana-clima").hidden = true;
+    document.getElementById("campana-cobertura").hidden = true;
     return;
   }
   actualizarClimaCiclo(campana.cultivo, campana.temporada);
+  actualizarCoberturaCiclo(campana.cultivo, campana.temporada);
   const registros = cargarRegistros()
     .filter((r) => r.lote === loteActual && r.cultivo === campana.cultivo && r.temporada === campana.temporada)
     .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
@@ -1105,4 +1242,5 @@ function renderTimelineDeCampana(cultivo, temporada) {
     </p>` + (registros.length ? registros.map(renderTarjetaTimeline).join("") : '<p class="vacio">Sin registros.</p>');
   document.getElementById("btn-volver-campana-activa").addEventListener("click", renderTimeline);
   actualizarClimaCiclo(cultivo, temporada);
+  actualizarCoberturaCiclo(cultivo, temporada);
 }
