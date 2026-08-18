@@ -1,6 +1,7 @@
 // --- Resumen por contratista: hectáreas trabajadas + monto, por contratista/campaña/categoría ---
-let tarifasCache = {};
-let unsubscribeTarifas = null;
+// La tarifa (USD/ha) se carga directo en cada registro (como hectáreas reales) — cada tarea puede
+// tener su propio precio, incluso dentro de la misma campaña/momento, así que no hay una tarifa fija
+// por categoría: el monto se calcula tarea por tarea y se suma.
 
 const CAMPO_HECTAREAS_POR_CATEGORIA = {
   siembra: "hectareas",
@@ -8,27 +9,6 @@ const CAMPO_HECTAREAS_POR_CATEGORIA = {
   laboreo: "hectareas",
   pulverizacion: "hectareasReales",
 };
-
-// Las tarifas se guardan por categoría + cultivo + temporada (la temporada trae "/", hay que sanearlo para el id).
-function idTarifa(categoria, cultivo, temporada) {
-  return `${categoria}__${cultivo}__${temporada}`.replace(/\//g, "-");
-}
-
-function iniciarListenerTarifas() {
-  if (unsubscribeTarifas) return;
-  unsubscribeTarifas = db.collection("tarifas").onSnapshot(
-    (snapshot) => {
-      const nuevo = {};
-      snapshot.forEach((doc) => {
-        const d = doc.data();
-        nuevo[idTarifa(d.categoria, d.cultivo, d.temporada)] = d;
-      });
-      tarifasCache = nuevo;
-      if (document.getElementById("tab-registros").classList.contains("active")) renderContratistasBloque();
-    },
-    () => mostrarToast("No se pudo sincronizar las tarifas con la nube")
-  );
-}
 
 function poblarFiltrosContratista() {
   const selContratista = document.getElementById("contratista-filtro-nombre");
@@ -66,45 +46,6 @@ function obtenerFiltrosContratista() {
   return { contratista, categoria, desde, hasta, cultivo, temporada };
 }
 
-function actualizarBloqueTarifa() {
-  const bloque = document.getElementById("contratista-tarifa-bloque");
-  const { cultivo, temporada, categoria } = obtenerFiltrosContratista();
-  if (!cultivo || !temporada || !categoria) {
-    bloque.hidden = true;
-    document.getElementById("form-tarifa").hidden = true;
-    return;
-  }
-  bloque.hidden = false;
-  const tarifaDoc = tarifasCache[idTarifa(categoria, cultivo, temporada)];
-  const valor = tarifaDoc ? parseFloat(tarifaDoc.tarifaUsdHa) : null;
-  document.getElementById("contratista-tarifa-texto").textContent = `Tarifa ${NOMBRES_CATEGORIA[categoria] || categoria} — ${cultivo} ${temporada}: ${
-    valor != null ? valor.toLocaleString("es-AR") + " USD/ha" : "sin definir"
-  }`;
-}
-
-document.getElementById("btn-editar-tarifa").addEventListener("click", () => {
-  const form = document.getElementById("form-tarifa");
-  const { cultivo, temporada, categoria } = obtenerFiltrosContratista();
-  const tarifaDoc = tarifasCache[idTarifa(categoria, cultivo, temporada)];
-  document.getElementById("input-tarifa").value = tarifaDoc ? tarifaDoc.tarifaUsdHa : "";
-  form.hidden = !form.hidden;
-});
-
-document.getElementById("form-tarifa").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const { cultivo, temporada, categoria } = obtenerFiltrosContratista();
-  if (!cultivo || !temporada || !categoria) return;
-  const valor = parseFloat(document.getElementById("input-tarifa").value) || 0;
-  db.collection("tarifas")
-    .doc(idTarifa(categoria, cultivo, temporada))
-    .set({ categoria, cultivo, temporada, tarifaUsdHa: valor, actualizado: new Date().toISOString() }, { merge: true })
-    .then(() => {
-      mostrarToast("Tarifa guardada");
-      document.getElementById("form-tarifa").hidden = true;
-    })
-    .catch(() => mostrarToast("No se pudo guardar (revisá tu conexión)"));
-});
-
 function calcularResumenContratista() {
   const { contratista, categoria, desde, hasta, cultivo, temporada } = obtenerFiltrosContratista();
   if (!contratista || !categoria || !cultivo || !temporada) return null;
@@ -122,11 +63,18 @@ function calcularResumenContratista() {
     .filter((r) => !hasta || r.fecha <= hasta)
     .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
 
-  const totalHa = actividades.reduce((suma, r) => suma + (parseFloat(r[campoHa]) || 0), 0);
-  const tarifaDoc = tarifasCache[idTarifa(categoria, cultivo, temporada)];
-  const tarifa = tarifaDoc ? parseFloat(tarifaDoc.tarifaUsdHa) || 0 : 0;
-  const montoUsd = totalHa * tarifa;
-  return { actividades, totalHa, tarifa, montoUsd, contratista, categoria, cultivo, temporada, desde, hasta };
+  let totalHa = 0;
+  let montoUsd = 0;
+  let faltaTarifa = 0;
+  actividades.forEach((r) => {
+    const ha = parseFloat(r[campoHa]) || 0;
+    const tarifa = parseFloat(r.tarifaUsdHa) || 0;
+    totalHa += ha;
+    montoUsd += ha * tarifa;
+    if (!tarifa) faltaTarifa++;
+  });
+
+  return { actividades, totalHa, montoUsd, faltaTarifa, contratista, categoria, cultivo, temporada, desde, hasta };
 }
 
 function renderResumenContratista() {
@@ -142,10 +90,18 @@ function renderResumenContratista() {
   document.getElementById("contratista-total-tareas").textContent = String(datos.actividades.length);
 
   const lista = document.getElementById("contratista-lista-actividades");
-  lista.innerHTML = datos.actividades.length
-    ? datos.actividades
-        .map(
-          (r) => `
+  const avisoTarifa =
+    datos.faltaTarifa > 0
+      ? `<p class="ayuda-mapa">⚠️ ${datos.faltaTarifa} tarea${datos.faltaTarifa === 1 ? "" : "s"} sin tarifa cargada — no ${
+          datos.faltaTarifa === 1 ? "está" : "están"
+        } incluida${datos.faltaTarifa === 1 ? "" : "s"} en el monto.</p>`
+      : "";
+  lista.innerHTML =
+    avisoTarifa +
+    (datos.actividades.length
+      ? datos.actividades
+          .map(
+            (r) => `
         <div class="registro-card">
           <div class="fila-top">
             <span class="tipo-badge">${escapeHtml(r.lote)}</span>
@@ -154,23 +110,19 @@ function renderResumenContratista() {
           <dl>${detalleParaMostrar(r)}</dl>
         </div>
       `
-        )
-        .join("")
-    : '<p class="vacio">No hay actividades confirmadas en ese período.</p>';
+          )
+          .join("")
+      : '<p class="vacio">No hay actividades confirmadas en ese período.</p>');
 }
 
 function renderContratistasBloque() {
   poblarFiltrosContratista();
-  actualizarBloqueTarifa();
   renderResumenContratista();
 }
 
 ["contratista-filtro-nombre", "contratista-filtro-campana", "contratista-filtro-categoria", "contratista-filtro-desde", "contratista-filtro-hasta"].forEach(
   (id) => {
-    document.getElementById(id).addEventListener("change", () => {
-      actualizarBloqueTarifa();
-      renderResumenContratista();
-    });
+    document.getElementById(id).addEventListener("change", renderResumenContratista);
   }
 );
 
@@ -227,12 +179,13 @@ function generarPDFContratista(datos) {
 
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
-  [
+  const lineasResumen = [
     `Tareas: ${datos.actividades.length}`,
     `Hectáreas: ${datos.totalHa.toFixed(1)} ha`,
-    `Tarifa: ${datos.tarifa.toLocaleString("es-AR")} USD/ha`,
     `Monto total: US$ ${datos.montoUsd.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`,
-  ].forEach((linea) => {
+  ];
+  if (datos.faltaTarifa > 0) lineasResumen.push(`(${datos.faltaTarifa} tarea(s) sin tarifa cargada, no incluida(s) en el monto)`);
+  lineasResumen.forEach((linea) => {
     saltoDePaginaSiHaceFalta(6);
     doc.setFont(undefined, "bold");
     doc.text(linea, margen, y);

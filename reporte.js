@@ -84,14 +84,16 @@ function renderHistorialRendimiento() {
   const variedadFiltro = document.getElementById("historial-filtro-variedad").value;
   const botonPdf = document.getElementById("btn-historial-pdf");
 
-  if (!loteFiltro || !variedadFiltro) {
-    cuerpo.innerHTML = '<tr><td colspan="4" class="vacio">Elegí un lote y una variedad para ver el historial.</td></tr>';
+  if (!loteFiltro && !variedadFiltro) {
+    cuerpo.innerHTML = '<tr><td colspan="4" class="vacio">Elegí un lote y/o una variedad para ver el historial.</td></tr>';
     document.getElementById("historial-promedio").hidden = true;
     if (botonPdf) botonPdf.hidden = true;
     return;
   }
 
-  const datos = obtenerHistorialRendimiento().filter((d) => d.lote === loteFiltro && d.variedad === variedadFiltro);
+  let datos = obtenerHistorialRendimiento();
+  if (loteFiltro) datos = datos.filter((d) => d.lote === loteFiltro);
+  if (variedadFiltro) datos = datos.filter((d) => d.variedad === variedadFiltro);
 
   cuerpo.innerHTML = datos.length
     ? datos
@@ -106,7 +108,7 @@ function renderHistorialRendimiento() {
       `
         )
         .join("")
-    : '<tr><td colspan="4" class="vacio">No hay cosechas para ese lote y esa variedad.</td></tr>';
+    : '<tr><td colspan="4" class="vacio">No hay cosechas para ese filtro.</td></tr>';
 
   const promedioCont = document.getElementById("historial-promedio");
   if (datos.length) {
@@ -128,16 +130,18 @@ document.getElementById("historial-filtro-variedad").addEventListener("change", 
 document.getElementById("btn-historial-pdf").addEventListener("click", () => {
   const loteFiltro = document.getElementById("historial-filtro-lote").value;
   const variedadFiltro = document.getElementById("historial-filtro-variedad").value;
-  if (!loteFiltro || !variedadFiltro) return;
-  const datos = obtenerHistorialRendimiento().filter((d) => d.lote === loteFiltro && d.variedad === variedadFiltro);
+  if (!loteFiltro && !variedadFiltro) return;
+  let datos = obtenerHistorialRendimiento();
+  if (loteFiltro) datos = datos.filter((d) => d.lote === loteFiltro);
+  if (variedadFiltro) datos = datos.filter((d) => d.variedad === variedadFiltro);
   if (!datos.length) {
     mostrarToast("No hay datos para generar el PDF");
     return;
   }
-  generarPDFHistorialRendimiento(loteFiltro, variedadFiltro, datos);
+  generarPDFHistorialRendimiento(loteFiltro || "Todos los lotes", variedadFiltro || "Todas las variedades", datos, !!loteFiltro);
 });
 
-function generarPDFHistorialRendimiento(lote, variedad, datos) {
+function generarPDFHistorialRendimiento(lote, variedad, datos, mostrarLotePorFila) {
   const doc = new jspdf.jsPDF();
   const anchoPagina = doc.internal.pageSize.getWidth();
   const altoPagina = doc.internal.pageSize.getHeight();
@@ -187,7 +191,7 @@ function generarPDFHistorialRendimiento(lote, variedad, datos) {
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
   doc.setFont(undefined, "bold");
-  doc.text("CAMPAÑA", margen + 3, y + 5.5);
+  doc.text(mostrarLotePorFila ? "CAMPAÑA" : "LOTE — CAMPAÑA", margen + 3, y + 5.5);
   doc.text("KG/HA", anchoPagina - margen - 25, y + 5.5);
   y += 14;
 
@@ -196,7 +200,7 @@ function generarPDFHistorialRendimiento(lote, variedad, datos) {
     doc.setFontSize(9.5);
     doc.setTextColor(40, 40, 40);
     doc.setFont(undefined, "normal");
-    doc.text(`${d.cultivo} ${d.temporada}`, margen, y);
+    doc.text(mostrarLotePorFila ? `${d.cultivo} ${d.temporada}` : `${d.lote} — ${d.cultivo} ${d.temporada}`, margen, y);
     doc.text(Math.round(d.rendimiento).toLocaleString("es-AR"), anchoPagina - margen, y, { align: "right" });
     y += 7;
   });
@@ -251,6 +255,7 @@ document.getElementById("reporte-lote").addEventListener("change", (e) => {
 function detalleTextoPDF(r) {
   if (r.tipo === "pulverizacion") {
     const haReales = parseFloat(r.hectareasReales) || 0;
+    const tarifa = parseFloat(r.tarifaUsdHa) || 0;
     const productos = (r.productos || [])
       .map((p) => {
         const total = haReales > 0 ? ` (total: ${(parseFloat(p.dosis) * haReales).toLocaleString("es-AR", { maximumFractionDigits: 1 })} ${p.unidad})` : "";
@@ -262,6 +267,8 @@ function detalleTextoPDF(r) {
       haReales > 0 && `Hectáreas pulverizadas (real): ${haReales.toLocaleString("es-AR")} ha`,
       productos && `Productos: ${productos}`,
       r.contratista && `Contratista: ${r.contratista}`,
+      tarifa > 0 &&
+        `Tarifa: ${tarifa.toLocaleString("es-AR")} USD/ha${haReales > 0 ? ` (monto: US$ ${(tarifa * haReales).toLocaleString("es-AR", { maximumFractionDigits: 2 })})` : ""}`,
       r.observaciones && `Observaciones: ${r.observaciones}`,
     ].filter(Boolean);
   }

@@ -115,7 +115,6 @@ function iniciarApp() {
   if (typeof iniciarListenerCampanas === "function") iniciarListenerCampanas();
   if (typeof iniciarListenerClima === "function") iniciarListenerClima();
   if (typeof iniciarListenerPoscosecha === "function") iniciarListenerPoscosecha();
-  if (typeof iniciarListenerTarifas === "function") iniciarListenerTarifas();
   cargarLotes()
     .then((lotes) => {
       lotesCache = lotes;

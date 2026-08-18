@@ -1,10 +1,10 @@
 const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado"],
-  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "hectareasReales", "observaciones", "contratista"],
-  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista"],
+  pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "hectareasReales", "observaciones", "contratista", "tarifaUsdHa"],
+  siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista", "tarifaUsdHa"],
   emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
-  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista"],
-  laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "hectareas", "contratista", "observaciones"],
+  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista", "tarifaUsdHa"],
+  laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "hectareas", "contratista", "observaciones", "tarifaUsdHa"],
 };
 
 const ETIQUETAS_CAMPO = {
@@ -18,6 +18,7 @@ const ETIQUETAS_CAMPO = {
   fechaFloracion: "Fecha floración", rendimientoKgHa: "Rendimiento (kg/ha)", humedad: "Humedad (%)",
   contratista: "Contratista", tipoLaboreo: "Tipo de laboreo", rendimientoEstimado: "Rendimiento estimado (kg/ha)",
   hectareasReales: "Hectáreas pulverizadas (real)",
+  tarifaUsdHa: "Tarifa (USD/ha)",
 };
 
 const NOMBRES_CATEGORIA = {
@@ -939,6 +940,7 @@ function buscarEstimacionRendimiento(r) {
 function detalleParaMostrar(r) {
   if (r.tipo === "pulverizacion") {
     const haReales = parseFloat(r.hectareasReales) || 0;
+    const tarifa = parseFloat(r.tarifaUsdHa) || 0;
     const productosTexto = (r.productos || [])
       .map((p) => {
         const total = haReales > 0 ? ` (total: ${(parseFloat(p.dosis) * haReales).toLocaleString("es-AR", { maximumFractionDigits: 1 })} ${p.unidad})` : "";
@@ -950,6 +952,7 @@ function detalleParaMostrar(r) {
       ["Hectáreas pulverizadas (real)", haReales > 0 ? `${haReales.toLocaleString("es-AR")} ha` : ""],
       ["Productos", productosTexto],
       ["Contratista", r.contratista],
+      ["Tarifa (USD/ha)", tarifa > 0 ? `${tarifa.toLocaleString("es-AR")} USD/ha${haReales > 0 ? ` (monto: US$ ${(tarifa * haReales).toLocaleString("es-AR", { maximumFractionDigits: 2 })})` : ""}` : ""],
       ["Observaciones", r.observaciones],
     ];
     return filas.filter(([, v]) => v).map(([label, v]) => `<dt>${label}</dt><dd>${escapeHtml(v)}</dd>`).join("");

@@ -205,6 +205,9 @@
           <div class="autocomplete-lista" hidden></div>
         </div>
       </label>
+      <label>Tarifa (USD/ha) <span class="opcional">(opcional)</span>
+        <input type="number" name="tarifaUsdHa" min="0" step="0.01">
+      </label>
       <label>Observaciones <span class="opcional">(opcional)</span>
         <textarea name="observaciones" rows="2" placeholder="Ej: viento leve, buena cobertura"></textarea>
       </label>
@@ -269,6 +272,9 @@
           <div class="autocomplete-lista" hidden></div>
         </div>
       </label>
+      <label>Tarifa (USD/ha) <span class="opcional">(opcional)</span>
+        <input type="number" name="tarifaUsdHa" min="0" step="0.01">
+      </label>
 
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
@@ -308,6 +314,9 @@
           <div class="autocomplete-lista" hidden></div>
         </div>
       </label>
+      <label>Tarifa (USD/ha) <span class="opcional">(opcional)</span>
+        <input type="number" name="tarifaUsdHa" min="0" step="0.01">
+      </label>
       <button type="submit" class="btn-primary">Guardar</button>
     </form>
 
@@ -330,6 +339,9 @@
           <input type="text" id="laboreo-contratista" name="contratista" placeholder="Ej: Labranzas Suárez" autocomplete="off">
           <div class="autocomplete-lista" hidden></div>
         </div>
+      </label>
+      <label>Tarifa (USD/ha) <span class="opcional">(opcional)</span>
+        <input type="number" name="tarifaUsdHa" min="0" step="0.01">
       </label>
       <label>Observaciones <span class="opcional">(opcional)</span>
         <textarea name="observaciones" rows="2"></textarea>
@@ -535,17 +547,6 @@
         <label>Hasta <span class="opcional">(opcional)</span>
           <input type="date" id="contratista-filtro-hasta">
         </label>
-      </div>
-
-      <div id="contratista-tarifa-bloque" hidden>
-        <span id="contratista-tarifa-texto" class="campana-actual-label"></span>
-        <button type="button" id="btn-editar-tarifa" class="btn-secundario">✏️</button>
-        <form id="form-tarifa" class="form-categoria" hidden>
-          <label>Tarifa (USD/ha)
-            <input type="number" id="input-tarifa" min="0" step="0.01">
-          </label>
-          <button type="submit" class="btn-primary">Guardar tarifa</button>
-        </form>
       </div>
 
       <div id="contratista-resultado" hidden>
