@@ -284,6 +284,9 @@
       <label>Fecha de conteo
         <input type="date" name="fecha" required>
       </label>
+      <label id="emergencia-variedad-label" hidden>Variedad/Híbrido <span class="opcional">(este lote tiene más de un híbrido en la campaña — elegí a cuál corresponde este conteo)</span>
+        <select name="variedad" id="emergencia-variedad"></select>
+      </label>
       <label>Plantas logradas / m²
         <input type="number" name="plantasM2" min="0" step="0.1">
       </label>
@@ -298,6 +301,12 @@
       </label>
       <label>Fecha de cosecha
         <input type="date" name="fecha" required>
+      </label>
+      <label>Variedad / híbrido <span class="opcional">(opcional — completá si el lote tuvo más de un híbrido)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="cosecha-variedad" name="variedad" placeholder="Ej: DK7272" autocomplete="off">
+          <div class="autocomplete-lista" hidden></div>
+        </div>
       </label>
       <label>Hectáreas cosechadas <span class="opcional">(opcional)</span>
         <input type="number" name="hectareas" min="0" step="0.1">

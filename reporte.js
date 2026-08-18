@@ -36,6 +36,10 @@ function poblarSelectorLotes() {
 
 // --- Historial de rendimiento: comparar cosechas entre campañas, por lote o por variedad ---
 function buscarVariedadDeCosecha(cosecha) {
+  // Si la cosecha ya trae su propia variedad (caso de lotes con más de un híbrido en la misma
+  // campaña), usarla directamente. Solo para registros viejos sin ese campo se adivina buscando
+  // la siembra más reciente del mismo lote+cultivo+temporada — puede estar mal si hubo 2+ siembras.
+  if (cosecha.variedad) return cosecha.variedad;
   const siembra = cargarRegistros()
     .filter(
       (r) =>

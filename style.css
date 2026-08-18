@@ -558,6 +558,7 @@ textarea { resize: vertical; }
   gap: 14px;
 }
 .campos-cultivo[hidden] { display: none; }
+#emergencia-variedad-label[hidden] { display: none; }
 
 .productos-bloque {
   display: flex;

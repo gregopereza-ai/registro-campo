@@ -2,8 +2,8 @@ const CAMPOS_CATEGORIA = {
   malezas: ["fecha", "lote", "cultivo", "temporada", "malezas", "insectos", "enfermedades", "observaciones", "rendimientoEstimado"],
   pulverizacion: ["fecha", "lote", "cultivo", "temporada", "momento", "hectareasReales", "observaciones", "contratista", "tarifaUsdHa"],
   siembra: ["fecha", "lote", "cultivo", "temporada", "variedad", "hectareas", "origen", "pg", "dosisKgHa", "pmg", "semillasPorMetro", "distanciaCm", "semillasHaBruto", "semillasHaViables", "contratista", "tarifaUsdHa"],
-  emergencia: ["fecha", "lote", "cultivo", "temporada", "plantasM2", "coeficienteLogro"],
-  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "hectareas", "rendimientoKgHa", "humedad", "contratista", "tarifaUsdHa"],
+  emergencia: ["fecha", "lote", "cultivo", "temporada", "variedad", "plantasM2", "coeficienteLogro"],
+  cosecha: ["fecha", "lote", "cultivo", "temporada", "fechaFloracion", "variedad", "hectareas", "rendimientoKgHa", "humedad", "contratista", "tarifaUsdHa"],
   laboreo: ["fecha", "lote", "cultivo", "temporada", "tipoLaboreo", "hectareas", "contratista", "observaciones", "tarifaUsdHa"],
 };
 
@@ -125,6 +125,9 @@ function nombresUsados(campo) {
     if (campo === "tiposLaboreo" && r.tipo === "laboreo" && r.tipoLaboreo) {
       nombres.add(r.tipoLaboreo);
     }
+    if (campo === "variedades" && r.tipo === "siembra" && r.variedad) {
+      nombres.add(r.variedad);
+    }
   });
   return [...nombres].sort((a, b) => a.localeCompare(b));
 }
@@ -208,6 +211,7 @@ iniciarAutocompletarCampo("siembra-contratista", () => nombresUsados("contratist
 iniciarAutocompletarCampo("cosecha-contratista", () => nombresUsados("contratistas"));
 iniciarAutocompletarCampo("laboreo-contratista", () => nombresUsados("contratistas"));
 iniciarAutocompletarCampo("laboreo-tipo", () => nombresUsados("tiposLaboreo"));
+iniciarAutocompletarCampo("cosecha-variedad", () => nombresUsados("variedades"));
 
 function agregarFilaFertilizante(valores = {}) {
   const cont = document.getElementById("fertilizantes-lista");
@@ -617,6 +621,10 @@ document.getElementById("chips-categorias").addEventListener("click", (e) => {
       agregarFilaFertilizante({ nombre: "Urea" });
       agregarFilaFertilizante({ nombre: "Superfosfato Simple" });
     }
+    if (form.id === "form-emergencia") {
+      actualizarCampoVariedadEmergencia();
+      actualizarResultadoEmergencia();
+    }
     form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
@@ -660,7 +668,11 @@ function editarRegistro(id) {
     }
     actualizarResultadoSiembra();
   }
-  if (registro.tipo === "emergencia") actualizarResultadoEmergencia();
+  if (registro.tipo === "emergencia") {
+    actualizarCampoVariedadEmergencia();
+    if (form.elements["variedad"]) form.elements["variedad"].value = registro.variedad || "";
+    actualizarResultadoEmergencia();
+  }
 
   edicionActual = { id: registro.id, tipo: registro.tipo };
   const boton = form.querySelector('button[type="submit"]');
@@ -703,20 +715,51 @@ function actualizarResultadoSiembra() {
 document.getElementById("form-siembra").addEventListener("input", actualizarResultadoSiembra);
 
 // --- Cálculo de coeficiente de logro (Emergencia) ---
-function buscarSiembraActual() {
+function siembrasDeCampanaActual() {
   const campana = campanaActivaDe(loteActual);
-  if (!campana) return null;
-  const registros = cargarRegistros()
+  if (!campana) return [];
+  return cargarRegistros()
     .filter((r) => r.tipo === "siembra" && r.lote === loteActual && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.estado !== "planificada")
     .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
-  return registros[0] || null;
+}
+
+// Si el lote tiene más de un híbrido/variedad sembrado en la campaña activa, hay que aclarar a
+// cuál corresponde el conteo (variedad); si no, se sigue usando la siembra más reciente sin pedir nada.
+function buscarSiembraActual(variedad) {
+  const siembras = siembrasDeCampanaActual();
+  if (variedad) return siembras.find((s) => s.variedad === variedad) || null;
+  return siembras[0] || null;
+}
+
+// Muestra el selector de variedad en el form de Emergencia solo cuando hace falta (2+ híbridos
+// distintos sembrados en la campaña activa de este lote) — si hay uno solo, no se pide nada.
+function actualizarCampoVariedadEmergencia() {
+  const label = document.getElementById("emergencia-variedad-label");
+  const select = document.getElementById("emergencia-variedad");
+  if (!label || !select) return;
+  const variedades = [...new Set(siembrasDeCampanaActual().map((s) => s.variedad).filter(Boolean))];
+  if (variedades.length > 1) {
+    label.hidden = false;
+    select.required = true;
+    select.innerHTML = '<option value="">— Elegí cuál —</option>' + variedades.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  } else {
+    label.hidden = true;
+    select.required = false;
+    select.innerHTML = "";
+  }
 }
 
 function actualizarResultadoEmergencia() {
   const form = document.getElementById("form-emergencia");
   const plantasM2 = parseFloat(form.elements["plantasM2"].value);
-  const siembra = buscarSiembraActual();
+  const variedadElegida = form.elements["variedad"] ? form.elements["variedad"].value : "";
+  const label = document.getElementById("emergencia-variedad-label");
   const p = document.getElementById("emergencia-resultado");
+  if (label && !label.hidden && !variedadElegida) {
+    p.textContent = "Elegí a qué híbrido corresponde este conteo para calcular el logro.";
+    return;
+  }
+  const siembra = buscarSiembraActual(variedadElegida);
   if (!siembra || !siembra.semillasHaViables) {
     p.textContent = "Cargá primero una Siembra con PG y densidad para calcular el logro.";
     return;
@@ -838,7 +881,7 @@ document.getElementById("form-emergencia").addEventListener("submit", (e) => {
   const form = e.target;
   const editando = !!edicionActual;
   const datos = Object.fromEntries(new FormData(form).entries());
-  const siembra = buscarSiembraActual();
+  const siembra = buscarSiembraActual(datos.variedad);
   let coeficienteLogro = "";
   if (siembra && siembra.semillasHaViables && datos.plantasM2) {
     coeficienteLogro = (((parseFloat(datos.plantasM2) * 10000) / siembra.semillasHaViables) * 100).toFixed(1);
