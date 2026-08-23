@@ -298,28 +298,44 @@ function calcularCoberturaVerde(dataUrl) {
   });
 }
 
-// Recalcula (o explica por qué no) la cobertura verde de la foto actual del form de Monitoreo,
-// según la fecha cargada y la primera Emergencia de la campaña activa.
+// Decide si corresponde ofrecer el cálculo de cobertura verde (según la fecha cargada y la
+// primera Emergencia de la campaña activa) y, si el usuario tildó que la foto es representativa
+// del lote, la calcula. No se calcula solo por tener foto — el usuario tiene que confirmarlo,
+// porque una foto de una maleza o plaga puntual no sirve para medir cobertura del lote.
 function actualizarCoberturaVerdeMonitoreo() {
   const estado = document.getElementById("malezas-cobertura-estado");
+  const checkboxLabel = document.getElementById("malezas-cobertura-checkbox-label");
+  const checkbox = document.getElementById("malezas-cobertura-checkbox");
   coberturaVerdeActual = null;
   if (!fotoActual) {
     estado.textContent = "";
+    checkboxLabel.hidden = true;
+    checkbox.checked = false;
     return;
   }
   const campana = campanaActivaDe(loteActual);
   if (!campana) {
     estado.textContent = "";
+    checkboxLabel.hidden = true;
     return;
   }
   const fechaForm = document.getElementById("form-malezas").elements["fecha"].value;
   const fechaEmergencia = fechaEmergenciaDe(loteActual, campana.cultivo, campana.temporada);
   if (!fechaEmergencia) {
     estado.textContent = "Todavía no hay una Emergencia cargada para esta campaña — la cobertura verde se calcula recién a partir de esa fecha.";
+    checkboxLabel.hidden = true;
+    checkbox.checked = false;
     return;
   }
   if (!fechaForm || fechaForm < fechaEmergencia) {
     estado.textContent = "Esta foto es de antes de la emergencia — no se calcula cobertura verde.";
+    checkboxLabel.hidden = true;
+    checkbox.checked = false;
+    return;
+  }
+  checkboxLabel.hidden = false;
+  if (!checkbox.checked) {
+    estado.textContent = "";
     return;
   }
   estado.textContent = "Calculando cobertura verde...";
@@ -332,6 +348,8 @@ function actualizarCoberturaVerdeMonitoreo() {
       estado.textContent = "";
     });
 }
+
+document.getElementById("malezas-cobertura-checkbox").addEventListener("change", actualizarCoberturaVerdeMonitoreo);
 
 function comprimirImagen(archivo) {
   return new Promise((resolve, reject) => {
@@ -784,6 +802,9 @@ function editarRegistro(id) {
 
   if (registro.tipo === "malezas") {
     mostrarPreviewFoto(registro.foto || null);
+    const checkboxCobertura = document.getElementById("malezas-cobertura-checkbox");
+    checkboxCobertura.checked = registro.coberturaVerde !== undefined && registro.coberturaVerde !== "";
+    actualizarCoberturaVerdeMonitoreo();
   }
   if (form.elements["esPlan"]) {
     form.elements["esPlan"].checked = registro.estado === "planificada";
