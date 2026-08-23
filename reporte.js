@@ -56,6 +56,11 @@ function calcularLotesSinMonitoreoReciente() {
       (r) => r.tipo === "siembra" && r.lote === nombre && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.estado !== "planificada"
     );
     if (!haySiembra) return;
+    // Ni de una campaña ya cosechada — ahí el monitoreo ya no tiene sentido.
+    const yaCosechado = cargarRegistros().some(
+      (r) => r.tipo === "cosecha" && r.lote === nombre && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.estado !== "planificada"
+    );
+    if (yaCosechado) return;
     const monitoreos = cargarRegistros()
       .filter((r) => r.tipo === "malezas" && r.lote === nombre && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.fecha)
       .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));

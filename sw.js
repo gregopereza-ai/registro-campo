@@ -1,4 +1,4 @@
-const CACHE_NAME = "zogoibi-registro-v43";
+const CACHE_NAME = "zogoibi-registro-v44";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -39,9 +39,12 @@ self.addEventListener("activate", (event) => {
 
 // Red primero (para que las actualizaciones lleguen enseguida con internet);
 // si falla (sin señal en el campo), se usa la última copia guardada.
+// "reload" fuerza a saltarse también la caché HTTP normal del navegador (no solo la
+// nuestra) — sin esto, un archivo nuevo en el servidor a veces seguía sirviéndose
+// viejo desde la caché del propio navegador aunque esta caché ya estuviera al día.
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "reload" })
       .then((respuesta) => {
         const copia = respuesta.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copia));
