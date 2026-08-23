@@ -47,6 +47,7 @@ function onRegistrosActualizados() {
   if (document.getElementById("tab-registros").classList.contains("active")) {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
+    if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
   }
 }
 
@@ -120,6 +121,7 @@ function iniciarApp() {
       lotesCache = lotes;
       dibujarMapa();
       if (typeof poblarSelectorLotes === "function") poblarSelectorLotes();
+      if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
       setTimeout(() => {
         if (typeof purgarPapeleraVieja === "function") purgarPapeleraVieja();
       }, 1000);
@@ -154,6 +156,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "registros") {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
+    if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
   }
   cerrarMenu();
 });

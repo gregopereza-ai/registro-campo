@@ -498,6 +498,27 @@
     <h2>Reporte de lote</h2>
     <p class="ayuda-mapa">Elegí un lote y una campaña para descargar su avance completo en PDF.</p>
 
+    <div class="categoria-csv">
+      <button type="button" id="btn-toggle-monitoreo-pendiente" class="btn-secundario btn-ancho">
+        <span id="monitoreo-pendiente-resumen">📋 Lotes sin monitoreo reciente</span>
+      </button>
+      <div id="monitoreo-pendiente-bloque" hidden>
+        <div class="tabla-stock-wrap">
+          <table class="tabla-stock">
+            <thead>
+              <tr>
+                <th>Lote</th>
+                <th>Campaña</th>
+                <th>Última recorrida</th>
+                <th class="num">Hace</th>
+              </tr>
+            </thead>
+            <tbody id="monitoreo-pendiente-cuerpo"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="categoria-csv reporte-bloque">
       <label>Lote
         <select id="reporte-lote"></select>

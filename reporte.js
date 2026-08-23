@@ -34,6 +34,77 @@ function poblarSelectorLotes() {
   }
 }
 
+// --- Lotes sin monitoreo reciente: aviso de lotes que hace tiempo no se recorren ---
+const UMBRAL_DIAS_MONITOREO = 10;
+
+function diasEntreFechas(desde, hasta) {
+  const d1 = new Date(desde + "T00:00:00");
+  const d2 = new Date(hasta + "T00:00:00");
+  return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+}
+
+function calcularLotesSinMonitoreoReciente() {
+  if (!lotesCache.length) return [];
+  const hoy = new Date().toISOString().slice(0, 10);
+  const nombresUnicos = [...new Set(lotesCache.map((l) => l.nombre))];
+  const filas = [];
+  nombresUnicos.forEach((nombre) => {
+    const campana = campanaActivaDe(nombre);
+    if (!campana) return;
+    // Solo lotes ya sembrados — no tiene sentido pedir monitoreo de algo que todavía no existe.
+    const haySiembra = cargarRegistros().some(
+      (r) => r.tipo === "siembra" && r.lote === nombre && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.estado !== "planificada"
+    );
+    if (!haySiembra) return;
+    const monitoreos = cargarRegistros()
+      .filter((r) => r.tipo === "malezas" && r.lote === nombre && r.cultivo === campana.cultivo && r.temporada === campana.temporada && r.fecha)
+      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+    const ultima = monitoreos[0] ? monitoreos[0].fecha : null;
+    const dias = ultima ? diasEntreFechas(ultima, hoy) : null;
+    filas.push({ lote: nombre, cultivo: campana.cultivo, temporada: campana.temporada, ultima, dias });
+  });
+  // Primero los que nunca se monitorearon, después de más días sin recorrer a menos.
+  filas.sort((a, b) => {
+    if (a.dias == null && b.dias == null) return a.lote.localeCompare(b.lote);
+    if (a.dias == null) return -1;
+    if (b.dias == null) return 1;
+    return b.dias - a.dias;
+  });
+  return filas;
+}
+
+function renderMonitoreoPendiente() {
+  const boton = document.getElementById("btn-toggle-monitoreo-pendiente");
+  if (!boton) return;
+  const resumen = document.getElementById("monitoreo-pendiente-resumen");
+  const cuerpo = document.getElementById("monitoreo-pendiente-cuerpo");
+  const filas = calcularLotesSinMonitoreoReciente();
+  const atencion = filas.filter((f) => f.dias == null || f.dias > UMBRAL_DIAS_MONITOREO).length;
+  resumen.textContent =
+    atencion > 0 ? `📋 Lotes sin monitoreo reciente (${atencion} necesitan revisión)` : "📋 Lotes sin monitoreo reciente (todo al día ✅)";
+  cuerpo.innerHTML = filas.length
+    ? filas
+        .map((f) => {
+          const necesitaAtencion = f.dias == null || f.dias > UMBRAL_DIAS_MONITOREO;
+          const textoHace = f.dias == null ? "Nunca" : `${f.dias} día${f.dias === 1 ? "" : "s"}`;
+          return `
+            <tr${necesitaAtencion ? ' class="fila-atencion"' : ""}>
+              <td>${escapeHtml(f.lote)}</td>
+              <td>${escapeHtml(f.cultivo)} ${escapeHtml(f.temporada)}</td>
+              <td>${f.ultima ? formatearFecha(f.ultima) : "—"}</td>
+              <td class="num">${necesitaAtencion ? "⚠️ " : ""}${textoHace}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : '<tr><td colspan="4" class="vacio">No hay lotes sembrados todavía en esta campaña.</td></tr>';
+}
+
+document.getElementById("btn-toggle-monitoreo-pendiente").addEventListener("click", () => {
+  const bloque = document.getElementById("monitoreo-pendiente-bloque");
+  bloque.hidden = !bloque.hidden;
+});
+
 // --- Historial de rendimiento: comparar cosechas entre campañas, por lote o por variedad ---
 function buscarVariedadDeCosecha(cosecha) {
   // Si la cosecha ya trae su propia variedad (caso de lotes con más de un híbrido en la misma
