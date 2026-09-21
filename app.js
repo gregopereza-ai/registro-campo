@@ -174,10 +174,20 @@ function limitar(valor, minimo, maximo) {
   return Math.min(Math.max(valor, minimo), maximo);
 }
 
+// Las coordenadas del mapa se multiplican por este factor. Antes eran números diminutos
+// (0.0001, 0.05...) y Safari de iPhone los redondea mal al hacer zoom, deformando los lotes;
+// con números grandes (miles) no hay ese problema.
+const ESCALA_MAPA = 100000;
+let tamanoMapaPx = { w: 1, h: 1 }; // tamaño en pantalla de la caja del mapa (se mide al dibujar)
+
 function aplicarVistaMapa() {
   const svg = document.querySelector("#mapa-contenedor svg");
   if (!svg || !vistaMapa) return;
-  svg.setAttribute("viewBox", `${vistaMapa.x.toFixed(5)} ${vistaMapa.y.toFixed(5)} ${vistaMapa.w.toFixed(5)} ${vistaMapa.h.toFixed(5)}`);
+  svg.setAttribute("viewBox", `${vistaMapa.x.toFixed(2)} ${vistaMapa.y.toFixed(2)} ${vistaMapa.w.toFixed(2)} ${vistaMapa.h.toFixed(2)}`);
+  // Borde de los lotes de 1 píxel fijo: en vez de vector-effect (que en Safari falla con
+  // el zoom), se recalcula el grosor en unidades del mapa cada vez que cambia la vista.
+  const unidadesPorPixel = Math.max(vistaMapa.w / tamanoMapaPx.w, vistaMapa.h / tamanoMapaPx.h);
+  svg.style.setProperty("--px", unidadesPorPixel.toFixed(4));
 }
 
 function zoomMapa(factor, cx, cy) {
@@ -337,8 +347,8 @@ function dibujarMapa() {
   const lonMin = Math.min(...lons), lonMax = Math.max(...lons);
   const correccion = Math.cos(((latMin + latMax) / 2) * Math.PI / 180);
 
-  const ancho = (lonMax - lonMin) * correccion;
-  const alto = latMax - latMin;
+  const ancho = (lonMax - lonMin) * correccion * ESCALA_MAPA;
+  const alto = (latMax - latMin) * ESCALA_MAPA;
   const margen = Math.max(ancho, alto) * 0.03;
   const w = ancho + margen * 2;
   const h = alto + margen * 2;
@@ -350,9 +360,9 @@ function dibujarMapa() {
   cont.style.setProperty("--mapa-ratio", w / h);
 
   const proyectar = ([lat, lon]) => {
-    const x = (lon - lonMin) * correccion + margen;
-    const y = (latMax - lat) + margen;
-    return `${x.toFixed(5)},${y.toFixed(5)}`;
+    const x = (lon - lonMin) * correccion * ESCALA_MAPA + margen;
+    const y = (latMax - lat) * ESCALA_MAPA + margen;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
   };
 
   const poligonosSvg = lotesCache
@@ -370,11 +380,13 @@ function dibujarMapa() {
   }
 
   cont.innerHTML = `
-    <svg viewBox="${vistaMapa.x.toFixed(5)} ${vistaMapa.y.toFixed(5)} ${vistaMapa.w.toFixed(5)} ${vistaMapa.h.toFixed(5)}" preserveAspectRatio="xMidYMid meet" width="100%">
+    <svg viewBox="${vistaMapa.x.toFixed(2)} ${vistaMapa.y.toFixed(2)} ${vistaMapa.w.toFixed(2)} ${vistaMapa.h.toFixed(2)}" preserveAspectRatio="xMidYMid meet" width="100%">
       ${poligonosSvg}
       ${marcadorSvg}
     </svg>
   `;
+  tamanoMapaPx = { w: cont.clientWidth || 1, h: cont.clientHeight || 1 };
+  aplicarVistaMapa();
 
   cont.querySelectorAll(".lote-poligono").forEach((poly) => {
     poly.addEventListener("click", () => {

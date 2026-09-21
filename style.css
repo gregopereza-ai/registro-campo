@@ -430,10 +430,11 @@ textarea { resize: vertical; }
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* --px (unidades del mapa por píxel de pantalla) lo actualiza aplicarVistaMapa() en app.js,
+   así el borde mide siempre 1 píxel sin usar vector-effect (que en Safari falla con el zoom). */
 .lote-poligono {
   stroke: rgba(0, 0, 0, 0.35);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
+  stroke-width: var(--px, 1);
   cursor: pointer;
 }
 
@@ -442,15 +443,13 @@ textarea { resize: vertical; }
 .lote-poligono:active,
 .lote-poligono.seleccionado {
   stroke: #1a1a1a;
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
+  stroke-width: calc(var(--px, 1) * 2);
 }
 
 .marcador-ubicacion {
   fill: #d32f2f;
   stroke: white;
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
+  stroke-width: calc(var(--px, 1) * 1.5);
 }
 
 .avance-general-titulo {
