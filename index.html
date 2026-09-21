@@ -499,6 +499,27 @@
     <p class="ayuda-mapa">Elegí un lote y una campaña para descargar su avance completo en PDF.</p>
 
     <div class="categoria-csv">
+      <button type="button" id="btn-toggle-planes-atrasados" class="btn-secundario btn-ancho">
+        <span id="planes-atrasados-resumen">📅 Planes atrasados</span>
+      </button>
+      <div id="planes-atrasados-bloque" hidden>
+        <p class="ayuda-mapa">Siembras y pulverizaciones planificadas cuya fecha ya pasó y todavía no se confirmaron. Tocá una fila para ir al lote.</p>
+        <div class="tabla-stock-wrap">
+          <table class="tabla-stock">
+            <thead>
+              <tr>
+                <th>Lote</th>
+                <th>Tarea</th>
+                <th class="num">Atraso</th>
+              </tr>
+            </thead>
+            <tbody id="planes-atrasados-cuerpo"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="categoria-csv">
       <button type="button" id="btn-toggle-monitoreo-pendiente" class="btn-secundario btn-ancho">
         <span id="monitoreo-pendiente-resumen">📋 Lotes sin monitoreo reciente</span>
       </button>

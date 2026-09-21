@@ -860,6 +860,12 @@ textarea { resize: vertical; }
   border-top: 2px solid var(--borde);
 }
 
+.fila-plan-atrasado { cursor: pointer; }
+/* Esta tabla permite que el texto baje de renglón para que la columna "Atraso" entre en el celular */
+#planes-atrasados-bloque .tabla-stock td { white-space: normal; padding: 8px 6px; }
+#planes-atrasados-bloque .tabla-stock td.num { white-space: nowrap; }
+#planes-atrasados-bloque[hidden] { display: none; }
+
 .fila-atencion td {
   background: #fbeee0;
   color: #8a4b1c;

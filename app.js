@@ -48,6 +48,7 @@ function onRegistrosActualizados() {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
     if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
+    if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
   }
 }
 
@@ -122,6 +123,7 @@ function iniciarApp() {
       dibujarMapa();
       if (typeof poblarSelectorLotes === "function") poblarSelectorLotes();
       if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
+      if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
       setTimeout(() => {
         if (typeof purgarPapeleraVieja === "function") purgarPapeleraVieja();
       }, 1000);
@@ -157,6 +159,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
     if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
+    if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
   }
   cerrarMenu();
 });

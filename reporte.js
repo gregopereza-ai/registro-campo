@@ -110,6 +110,71 @@ document.getElementById("btn-toggle-monitoreo-pendiente").addEventListener("clic
   bloque.hidden = !bloque.hidden;
 });
 
+// --- Planes atrasados: siembras/pulverizaciones planificadas cuya fecha ya pasó sin confirmarse ---
+const DIAS_ATRASO_GRAVE = 7; // más de una semana de atraso se resalta
+
+function fechaHoyLocal() {
+  // toISOString() usa hora UTC y de noche daría "mañana" en Argentina — acá va la fecha del celular.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function calcularPlanesAtrasados() {
+  const hoy = fechaHoyLocal();
+  return cargarRegistros()
+    .filter((r) => r.estado === "planificada" && r.fecha && r.fecha < hoy)
+    .filter((r) => {
+      // Solo planes de la campaña activa del lote: uno viejo de una campaña que ya cambió no es "atraso".
+      const campana = campanaActivaDe(r.lote);
+      return campana && campana.cultivo === r.cultivo && campana.temporada === r.temporada;
+    })
+    .map((r) => ({
+      lote: r.lote,
+      tarea: `${NOMBRES_CATEGORIA[r.tipo] || r.tipo}${r.tipo === "pulverizacion" && r.momento ? " — " + r.momento : ""}`,
+      cultivo: r.cultivo,
+      temporada: r.temporada,
+      fecha: r.fecha,
+      dias: diasEntreFechas(r.fecha, hoy),
+    }))
+    .sort((a, b) => b.dias - a.dias || a.lote.localeCompare(b.lote));
+}
+
+function renderPlanesAtrasados() {
+  const boton = document.getElementById("btn-toggle-planes-atrasados");
+  if (!boton) return;
+  const resumen = document.getElementById("planes-atrasados-resumen");
+  const cuerpo = document.getElementById("planes-atrasados-cuerpo");
+  const filas = calcularPlanesAtrasados();
+  resumen.textContent =
+    filas.length > 0
+      ? `📅 Planes atrasados (${filas.length} sin confirmar)`
+      : "📅 Planes atrasados (todo al día ✅)";
+  cuerpo.innerHTML = filas.length
+    ? filas
+        .map(
+          (f) => `
+            <tr class="fila-plan-atrasado${f.dias > DIAS_ATRASO_GRAVE ? " fila-atencion" : ""}" data-lote="${escapeHtml(f.lote)}">
+              <td>${escapeHtml(f.lote)}</td>
+              <td>${escapeHtml(f.tarea)}<br><span class="opcional">${escapeHtml(f.cultivo)} ${escapeHtml(f.temporada)}</span></td>
+              <td class="num">${f.dias > DIAS_ATRASO_GRAVE ? "⚠️ " : ""}${f.dias} día${f.dias === 1 ? "" : "s"}<br><span class="opcional">era el ${formatearFecha(f.fecha)}</span></td>
+            </tr>
+          `
+        )
+        .join("")
+    : '<tr><td colspan="3" class="vacio">No hay planes vencidos sin confirmar.</td></tr>';
+}
+
+document.getElementById("btn-toggle-planes-atrasados").addEventListener("click", () => {
+  const bloque = document.getElementById("planes-atrasados-bloque");
+  bloque.hidden = !bloque.hidden;
+});
+
+// Tocar un plan atrasado abre la ficha de ese lote, donde está el botón "✓ Confirmar".
+document.getElementById("planes-atrasados-cuerpo").addEventListener("click", (e) => {
+  const fila = e.target.closest("tr[data-lote]");
+  if (fila) abrirFicha(fila.dataset.lote);
+});
+
 // --- Historial de rendimiento: comparar cosechas entre campañas, por lote o por variedad ---
 function buscarVariedadDeCosecha(cosecha) {
   // Si la cosecha ya trae su propia variedad (caso de lotes con más de un híbrido en la misma

@@ -60,6 +60,7 @@ function iniciarListenerCampanas() {
 
 function onCampanasActualizadas() {
   if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
+  if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
   if (!loteActual || !document.getElementById("tab-ficha").classList.contains("active")) return;
   actualizarEtiquetaCampana();
   actualizarMetaFicha();
