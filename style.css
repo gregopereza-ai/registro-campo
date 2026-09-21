@@ -379,11 +379,15 @@ textarea { resize: vertical; }
   border: 1px solid var(--borde);
   touch-action: none;
   cursor: grab;
-  /* Altura fija: si dependiera del tamaño del SVG (como antes), el navegador tiene que
-     recalcularla en cada frame del zoom/arrastre, y en Safari de iPhone eso a veces
-     dejaba lotes sin dibujar a mitad de un pellizco de zoom. Con altura fija no hace
-     falta recalcular nada, solo repintar. */
-  height: min(65vh, 480px);
+  /* Alto fijado por proporción (no por vh): si el alto dependiera del tamaño del SVG
+     recalculado en cada frame del zoom (como antes), Safari de iPhone a veces dejaba
+     lotes sin dibujar a mitad de un pellizco. Con esto no hace falta recalcular nada
+     durante el zoom, solo repintar. --mapa-ratio (ancho/alto real del campo) lo fija
+     dibujarMapa() en app.js, así la caja siempre tiene la misma forma que el mapa real
+     y no lo estira/aplasta. El valor 1.5 es solo el respaldo antes de que cargue.
+  */
+  aspect-ratio: var(--mapa-ratio, 1.5);
+  max-height: 480px;
 }
 
 #mapa-contenedor:active { cursor: grabbing; }

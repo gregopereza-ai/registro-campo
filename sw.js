@@ -1,4 +1,4 @@
-const CACHE_NAME = "zogoibi-registro-v45";
+const CACHE_NAME = "zogoibi-registro-v46";
 const ARCHIVOS = [
   "./",
   "./index.html",

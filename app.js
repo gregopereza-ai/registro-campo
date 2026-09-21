@@ -345,6 +345,9 @@ function dibujarMapa() {
 
   extentoMapaCompleto = { w, h };
   if (!vistaMapa) vistaMapa = { x: 0, y: 0, w, h };
+  // La caja del mapa tiene que tener la misma forma (ancho/alto) que el campo real,
+  // si no el SVG se estira para entrar en la caja y el mapa se ve deformado.
+  cont.style.setProperty("--mapa-ratio", w / h);
 
   const proyectar = ([lat, lon]) => {
     const x = (lon - lonMin) * correccion + margen;
