@@ -860,6 +860,89 @@ textarea { resize: vertical; }
   border-top: 2px solid var(--borde);
 }
 
+/* --- Planificaciones (planificar / confirmar labores en varios lotes) --- */
+.subtabs-plan {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.subtab-plan {
+  flex: 1;
+  background: white;
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  border-radius: 8px;
+  padding: 10px 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.subtab-plan.active { background: var(--verde); color: white; }
+
+.form-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+#plan-momento-label[hidden],
+#plan-campos-pulverizacion[hidden],
+.plan-campana-cuerpo[hidden] { display: none; }
+
+.plan-lotes-bloque { display: flex; flex-direction: column; gap: 8px; }
+.plan-lotes-bloque .ayuda-mapa { margin: 0; }
+
+.plan-campana {
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  background: white;
+}
+.plan-campana-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--fondo);
+  border: none;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--verde-oscuro);
+  cursor: pointer;
+  text-align: left;
+}
+.plan-campana-cuenta { font-size: 0.82rem; font-weight: 600; color: var(--gris); text-align: right; }
+.plan-campana-cuerpo { padding: 6px 12px 10px; }
+.plan-todos {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borde);
+  font-size: 0.9rem;
+}
+.plan-todos input,
+.plan-lote-check input { width: auto; flex: 0 0 auto; }
+.plan-lote-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--fondo);
+}
+.plan-lote-check { flex: 1; flex-direction: row; align-items: center; gap: 8px; font-weight: 600; }
+.plan-lote-ha { width: 90px; padding: 6px 8px; }
+.plan-fecha-txt { text-align: right; font-size: 0.85rem; font-weight: 600; }
+.plan-vencida .plan-fecha-txt { color: #8a4b1c; }
+
 .fila-plan-atrasado { cursor: pointer; }
 /* Esta tabla permite que el texto baje de renglón para que la columna "Atraso" entre en el celular */
 #planes-atrasados-bloque .tabla-stock td { white-space: normal; padding: 8px 6px; }

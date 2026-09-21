@@ -1,4 +1,4 @@
-const CACHE_NAME = "zogoibi-registro-v48";
+const CACHE_NAME = "zogoibi-registro-v49";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const ARCHIVOS = [
   "./feed.js",
   "./poscosecha.js",
   "./reporte.js",
+  "./planificaciones.js",
   "./contratistas.js",
   "./auth.js",
   "./firebase-config.js",

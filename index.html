@@ -42,6 +42,7 @@
 <nav class="tabs" id="tabs" hidden>
   <button class="tab-btn active" data-tab="mapa">🗺️ Mapa</button>
   <button class="tab-btn" data-tab="feed">📰 Feed</button>
+  <button class="tab-btn" data-tab="planificaciones">📋 Planificaciones</button>
   <button class="tab-btn" data-tab="clima">🌦️ Clima</button>
   <button class="tab-btn" data-tab="poscosecha">🛢️ Poscosecha</button>
   <button class="tab-btn" data-tab="registros">📄 Registros</button>
@@ -75,6 +76,99 @@
     <h2>Feed</h2>
     <p class="ayuda-mapa">Lo último cargado en cualquier lote, sin tener que entrar uno por uno. Tocá una tarjeta para ir directo ahí.</p>
     <div id="lista-feed"></div>
+  </section>
+
+  <section id="tab-planificaciones" class="tab-panel">
+    <h2>Planificaciones</h2>
+    <div class="subtabs-plan">
+      <button type="button" class="subtab-plan active" data-sub="planificar">Planificar labores</button>
+      <button type="button" class="subtab-plan" data-sub="confirmar">Confirmar labores</button>
+    </div>
+
+    <div id="plan-vista-planificar">
+      <p class="ayuda-mapa">Cargá la labor una sola vez y elegí en qué lotes se va a hacer. Se crea un plan en cada lote elegido.</p>
+      <form id="form-plan-multi" class="form-plan">
+        <label>Tipo de labor
+          <select id="plan-tipo">
+            <option value="pulverizacion">Pulverización</option>
+            <option value="siembra">Siembra</option>
+          </select>
+        </label>
+
+        <label id="plan-momento-label">Momento
+          <select id="plan-momento">
+            <option value="Barbecho">Barbecho</option>
+            <option value="Preemergente">Preemergente</option>
+            <option value="Postemergente">Postemergente</option>
+            <option value="Aéreo">Aéreo</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </label>
+
+        <label>Fecha planificada
+          <input type="date" id="plan-fecha" required>
+        </label>
+
+        <div id="plan-campos-pulverizacion" class="productos-bloque">
+          <span class="etiqueta-bloque">Productos</span>
+          <div id="plan-productos-lista"></div>
+          <button type="button" id="btn-plan-agregar-producto" class="btn-secundario">+ Agregar producto</button>
+        </div>
+
+        <div id="plan-campos-siembra" class="campos-cultivo" hidden>
+          <label>Variedad / híbrido <span class="opcional">(opcional)</span>
+            <div class="autocomplete-wrap">
+              <input type="text" id="plan-variedad" placeholder="Ej: Baguette 801" autocomplete="off">
+              <div class="autocomplete-lista" hidden></div>
+            </div>
+          </label>
+          <label>Origen <span class="opcional">(opcional)</span>
+            <select id="plan-origen">
+              <option value="">— Seleccionar —</option>
+              <option value="Propia">Propia</option>
+              <option value="Comprada">Comprada</option>
+            </select>
+          </label>
+          <p class="ayuda-mapa">Las hectáreas de cada lote salen de su campaña (podés cambiarlas abajo, lote por lote). Los datos técnicos de siembra (PG, densidad, fertilización) se completan después, desde la ficha de cada lote.</p>
+        </div>
+
+        <label>Contratista <span class="opcional">(opcional)</span>
+          <div class="autocomplete-wrap">
+            <input type="text" id="plan-contratista" placeholder="Ej: Lasarte" autocomplete="off">
+            <div class="autocomplete-lista" hidden></div>
+          </div>
+        </label>
+        <label>Tarifa (USD/ha) <span class="opcional">(opcional)</span>
+          <input type="number" id="plan-tarifa" min="0" step="0.01">
+        </label>
+        <label>Observaciones <span class="opcional">(opcional)</span>
+          <textarea id="plan-observaciones" rows="2"></textarea>
+        </label>
+
+        <div class="plan-lotes-bloque">
+          <span class="etiqueta-bloque">Lotes</span>
+          <p class="ayuda-mapa">Tocá una campaña para ver sus lotes y tildar los que correspondan.</p>
+          <div id="plan-campanas"></div>
+        </div>
+
+        <button type="submit" id="btn-plan-guardar" class="btn-primary">Crear planes</button>
+      </form>
+    </div>
+
+    <div id="plan-vista-confirmar" hidden>
+      <p class="ayuda-mapa">Tildá las labores que ya se hicieron y confirmalas todas juntas. Las que tienen la fecha vencida aparecen con ⚠️.</p>
+      <div class="form-plan">
+        <label class="checkbox-plan">
+          <input type="checkbox" id="conf-mantener-fecha">
+          Dejar la fecha planificada de cada labor
+        </label>
+        <label id="conf-fecha-label">Fecha en que se hicieron
+          <input type="date" id="conf-fecha">
+        </label>
+      </div>
+      <div id="conf-campanas"></div>
+      <button type="button" id="btn-conf-guardar" class="btn-primary btn-ancho">Confirmar labores</button>
+    </div>
   </section>
 
   <section id="tab-ficha" class="tab-panel">
@@ -652,6 +746,7 @@
 <script src="feed.js"></script>
 <script src="poscosecha.js"></script>
 <script src="reporte.js"></script>
+<script src="planificaciones.js"></script>
 <script src="contratistas.js"></script>
 <script src="app.js"></script>
 </body>

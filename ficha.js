@@ -61,6 +61,9 @@ function iniciarListenerCampanas() {
 function onCampanasActualizadas() {
   if (typeof renderPanelAvanceGeneral === "function") renderPanelAvanceGeneral();
   if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
+  if (document.getElementById("tab-planificaciones").classList.contains("active") && typeof renderPlanificaciones === "function") {
+    renderPlanificaciones();
+  }
   if (!loteActual || !document.getElementById("tab-ficha").classList.contains("active")) return;
   actualizarEtiquetaCampana();
   actualizarMetaFicha();
@@ -88,8 +91,7 @@ function hectareasDeLote(lote, loteInfo) {
   return loteInfo && loteInfo.hectareasTotales != null ? loteInfo.hectareasTotales : null;
 }
 
-function agregarFilaProducto(valores = {}) {
-  const cont = document.getElementById("productos-lista");
+function agregarFilaProducto(valores = {}, cont = document.getElementById("productos-lista")) {
   const fila = document.createElement("div");
   fila.className = "producto-fila";
   fila.innerHTML = `

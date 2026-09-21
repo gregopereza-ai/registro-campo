@@ -8,7 +8,8 @@ function mostrarToast(mensaje) {
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
-  return div.innerHTML;
+  // También comillas: sin esto, un lote como 30 Prof "70" rompía los atributos data-lote="..." del HTML.
+  return div.innerHTML.replace(/"/g, "&quot;");
 }
 
 // --- Registros: array sincronizado en vivo con Firestore ---
@@ -43,6 +44,9 @@ function onRegistrosActualizados() {
   }
   if (document.getElementById("tab-papelera").classList.contains("active") && typeof renderPapelera === "function") {
     renderPapelera();
+  }
+  if (document.getElementById("tab-planificaciones").classList.contains("active") && typeof renderPlanificaciones === "function") {
+    renderPlanificaciones();
   }
   if (document.getElementById("tab-registros").classList.contains("active")) {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
@@ -154,6 +158,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "mapa") dibujarMapa();
   if (btn.dataset.tab === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (btn.dataset.tab === "feed" && typeof renderFeed === "function") renderFeed();
+  if (btn.dataset.tab === "planificaciones" && typeof renderPlanificaciones === "function") renderPlanificaciones();
   if (btn.dataset.tab === "poscosecha" && typeof renderPoscosecha === "function") renderPoscosecha();
   if (btn.dataset.tab === "registros") {
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
