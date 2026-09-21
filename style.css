@@ -379,12 +379,19 @@ textarea { resize: vertical; }
   border: 1px solid var(--borde);
   touch-action: none;
   cursor: grab;
+  /* Altura fija: si dependiera del tamaño del SVG (como antes), el navegador tiene que
+     recalcularla en cada frame del zoom/arrastre, y en Safari de iPhone eso a veces
+     dejaba lotes sin dibujar a mitad de un pellizco de zoom. Con altura fija no hace
+     falta recalcular nada, solo repintar. */
+  height: min(65vh, 480px);
 }
 
 #mapa-contenedor:active { cursor: grabbing; }
 
 #mapa-contenedor svg {
   display: block;
+  width: 100%;
+  height: 100%;
   touch-action: none;
 }
 
