@@ -53,6 +53,7 @@ function onRegistrosActualizados() {
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
     if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();
     if (typeof renderPlanesAtrasados === "function") renderPlanesAtrasados();
+    if (typeof poblarSelectorCampanaCompleta === "function") poblarSelectorCampanaCompleta();
   }
 }
 
@@ -161,6 +162,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "planificaciones" && typeof renderPlanificaciones === "function") renderPlanificaciones();
   if (btn.dataset.tab === "poscosecha" && typeof renderPoscosecha === "function") renderPoscosecha();
   if (btn.dataset.tab === "registros") {
+    if (typeof poblarSelectorCampanaCompleta === "function") poblarSelectorCampanaCompleta();
     if (typeof renderHistorialRendimiento === "function") renderHistorialRendimiento();
     if (typeof renderContratistasBloque === "function") renderContratistasBloque();
     if (typeof renderMonitoreoPendiente === "function") renderMonitoreoPendiente();

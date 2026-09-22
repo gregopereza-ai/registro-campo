@@ -396,6 +396,235 @@ document.getElementById("reporte-lote").addEventListener("change", (e) => {
   poblarSelectorCampanas(e.target.value);
 });
 
+// --- Reporte de campaña completo: un PDF con todos los lotes de una campaña ---
+function poblarSelectorCampanaCompleta() {
+  const select = document.getElementById("reporte-campana-completa");
+  if (!select) return;
+  const valorActual = select.value;
+  const combos = new Map();
+  cargarRegistros()
+    .filter((r) => r.estado !== "planificada" && r.cultivo && r.temporada)
+    .forEach((r) => {
+      const clave = `${r.cultivo}__${r.temporada}`;
+      const actual = combos.get(clave);
+      if (!actual || (r.fecha || "") > actual.fechaMax) combos.set(clave, { cultivo: r.cultivo, temporada: r.temporada, fechaMax: r.fecha || "" });
+    });
+  const lista = [...combos.values()].sort((a, b) => b.fechaMax.localeCompare(a.fechaMax));
+  select.innerHTML = lista.length
+    ? lista.map((c) => `<option value="${escapeHtml(c.cultivo)}__${escapeHtml(c.temporada)}">${escapeHtml(c.cultivo)} ${escapeHtml(c.temporada)}</option>`).join("")
+    : '<option value="">Todavía no hay campañas con datos cargados</option>';
+  const boton = document.getElementById("btn-reporte-campana-pdf");
+  if (boton) boton.disabled = !lista.length;
+  if (lista.some((c) => `${c.cultivo}__${c.temporada}` === valorActual)) select.value = valorActual;
+}
+
+// Lotes de una campaña: los que la tienen asignada hoy, más cualquier lote que tenga actividad
+// confirmada de esa campaña aunque después haya pasado a otro cultivo (ej: un lote de Maíz que
+// se re-planificó a Soja sigue mostrando el barbecho de Maíz que ya se hizo).
+function lotesDeCampanaCompleta(cultivo, temporada) {
+  const nombres = new Set();
+  Object.entries(campanasLoteCache).forEach(([lote, c]) => {
+    if (c && c.cultivo === cultivo && c.temporada === temporada) nombres.add(lote);
+  });
+  cargarRegistros()
+    .filter((r) => r.estado !== "planificada" && r.cultivo === cultivo && r.temporada === temporada)
+    .forEach((r) => nombres.add(r.lote));
+  return [...nombres].sort(ordenarLotes);
+}
+
+function calcularFilaCampanaCompleta(lote, cultivo, temporada) {
+  const registrosLote = (tipo) => cargarRegistros().filter((r) => r.tipo === tipo && r.lote === lote && r.cultivo === cultivo && r.temporada === temporada && r.estado !== "planificada");
+  const siembras = registrosLote("siembra").sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  const cosechas = registrosLote("cosecha").sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+
+  const loteInfo = typeof lotesCache !== "undefined" ? lotesCache.find((l) => l.nombre === lote) : null;
+  const hectareas = hectareasDeLote(lote, loteInfo);
+
+  const haSembrada = siembras.reduce((s, r) => s + (parseFloat(r.hectareas) || 0), 0);
+  const variedades = [...new Set(siembras.map((r) => r.variedad).filter(Boolean))];
+  const contratistasSiembra = [...new Set(siembras.map((r) => r.contratista).filter(Boolean))];
+  const fechaSiembra = siembras.length ? siembras[siembras.length - 1].fecha : null; // la más reciente
+
+  const haCosechada = cosechas.reduce((s, r) => s + (parseFloat(r.hectareas) || 0), 0);
+  const produccionTn = cosechas.reduce((s, r) => s + ((parseFloat(r.hectareas) || 0) * (parseFloat(r.rendimientoKgHa) || 0)) / 1000, 0);
+  const rindeProm = haCosechada > 0 ? (produccionTn * 1000) / haCosechada : null;
+  const contratistasCosecha = [...new Set(cosechas.map((r) => r.contratista).filter(Boolean))];
+  const fechaCosecha = cosechas.length ? cosechas[cosechas.length - 1].fecha : null;
+
+  return {
+    lote, hectareas, haSembrada, variedades, contratistasSiembra, fechaSiembra,
+    haCosechada, produccionTn, rindeProm, contratistasCosecha, fechaCosecha,
+  };
+}
+
+function generarPDFCampanaCompleta(cultivo, temporada) {
+  const filas = lotesDeCampanaCompleta(cultivo, temporada).map((l) => calcularFilaCampanaCompleta(l, cultivo, temporada));
+  if (!filas.length) {
+    mostrarToast("No hay datos para esa campaña");
+    return;
+  }
+
+  const totales = filas.reduce(
+    (t, f) => {
+      t.hectareas += f.hectareas || 0;
+      t.haSembrada += f.haSembrada;
+      t.haCosechada += f.haCosechada;
+      t.produccionTn += f.produccionTn;
+      return t;
+    },
+    { hectareas: 0, haSembrada: 0, haCosechada: 0, produccionTn: 0 }
+  );
+  const rindeGeneral = totales.haCosechada > 0 ? (totales.produccionTn * 1000) / totales.haCosechada : null;
+
+  const doc = new jspdf.jsPDF();
+  const anchoPagina = doc.internal.pageSize.getWidth();
+  const altoPagina = doc.internal.pageSize.getHeight();
+  const margen = 15;
+  const anchoUtil = anchoPagina - margen * 2;
+  const margenInferior = 20;
+  let y = margen;
+
+  function saltoDePaginaSiHaceFalta(necesario) {
+    if (y + necesario > altoPagina - margenInferior) {
+      doc.addPage();
+      y = margen;
+    }
+  }
+  function lineaTexto(texto, x, tamano, color, negrita, opts) {
+    doc.setFontSize(tamano);
+    doc.setTextColor(color[0], color[1], color[2]);
+    doc.setFont(undefined, negrita ? "bold" : "normal");
+    doc.text(texto, x, y, opts);
+  }
+
+  lineaTexto("Establecimiento Zogoibi S.A.", margen, 16, [47, 109, 60], true);
+  doc.setFontSize(9);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Fecha de generación: ${formatearFecha(new Date().toISOString().slice(0, 10))}`, anchoPagina - margen, y, { align: "right" });
+  y += 7;
+  lineaTexto("Reporte de campaña completo", margen, 12, [90, 90, 90], false);
+  y += 9;
+  doc.setDrawColor(210, 210, 200);
+  doc.line(margen, y, anchoPagina - margen, y);
+  y += 8;
+
+  lineaTexto(`${cultivo} ${temporada}`, margen, 14, [30, 30, 30], true);
+  y += 10;
+
+  const pctSembrado = totales.hectareas ? Math.min(100, Math.round((totales.haSembrada / totales.hectareas) * 100)) : 0;
+  const pctCosechado = totales.haSembrada ? Math.min(100, Math.round((totales.haCosechada / totales.haSembrada) * 100)) : 0;
+  const resumen = [
+    `Lotes: ${filas.length} — Hectáreas totales: ${totales.hectareas.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha`,
+    `Sembrado: ${totales.haSembrada.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha (${pctSembrado}%)`,
+    `Cosechado: ${totales.haCosechada.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha (${pctCosechado}%)`,
+    `Producción: ${totales.produccionTn.toLocaleString("es-AR", { maximumFractionDigits: 1 })} t${rindeGeneral != null ? ` — Rinde promedio: ${rindeGeneral.toLocaleString("es-AR", { maximumFractionDigits: 0 })} kg/ha` : ""}`,
+  ];
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont(undefined, "bold");
+  resumen.forEach((linea) => {
+    doc.text(linea, margen, y);
+    y += 6.5;
+  });
+  y += 6;
+
+  // --- Tabla, un lote por fila ---
+  const colLote = margen + 3;
+  const colSiembra = margen + 40;
+  const colCosecha = margen + 98;
+  const colContratistas = margen + 143;
+  const finTabla = anchoPagina - margen - 3;
+  const anchoLote = colSiembra - colLote - 4;
+  const anchoSiembra = colCosecha - colSiembra - 4;
+  const anchoCosecha = colContratistas - colCosecha - 4;
+  const anchoContratistas = finTabla - colContratistas;
+
+  function encabezadoTabla() {
+    saltoDePaginaSiHaceFalta(14);
+    doc.setFillColor(32, 75, 41);
+    doc.rect(margen, y, anchoUtil, 8, "F");
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont(undefined, "bold");
+    doc.text("LOTE / HA", colLote, y + 5.5);
+    doc.text("SIEMBRA", colSiembra, y + 5.5);
+    doc.text("COSECHA", colCosecha, y + 5.5);
+    doc.text("CONTRATISTAS", colContratistas, y + 5.5);
+    y += 12;
+  }
+  encabezadoTabla();
+
+  filas.forEach((f, i) => {
+    const lineasSiembra = [];
+    if (f.haSembrada > 0) {
+      lineasSiembra.push(`${f.haSembrada.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha${f.fechaSiembra ? " — " + formatearFecha(f.fechaSiembra) : ""}`);
+      if (f.variedades.length) lineasSiembra.push(f.variedades.join(", "));
+    } else {
+      lineasSiembra.push("Sin sembrar");
+    }
+    const lineasCosecha = [];
+    if (f.haCosechada > 0) {
+      lineasCosecha.push(`${f.haCosechada.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha${f.fechaCosecha ? " — " + formatearFecha(f.fechaCosecha) : ""}`);
+      lineasCosecha.push(`${f.rindeProm.toLocaleString("es-AR", { maximumFractionDigits: 0 })} kg/ha`);
+    } else {
+      lineasCosecha.push("Sin cosechar");
+    }
+    const lineasContratistas = [];
+    if (f.contratistasSiembra.length) lineasContratistas.push(`Siembra: ${f.contratistasSiembra.join(", ")}`);
+    if (f.contratistasCosecha.length) lineasContratistas.push(`Cosecha: ${f.contratistasCosecha.join(", ")}`);
+    if (!lineasContratistas.length) lineasContratistas.push("—");
+
+    const lLineas = doc.splitTextToSize(f.lote, anchoLote);
+    const haLinea = f.hectareas != null ? [`${f.hectareas.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha`] : [];
+    const sLineas = lineasSiembra.flatMap((l) => doc.splitTextToSize(l, anchoSiembra));
+    const cLineas = lineasCosecha.flatMap((l) => doc.splitTextToSize(l, anchoCosecha));
+    const tLineas = lineasContratistas.flatMap((l) => doc.splitTextToSize(l, anchoContratistas));
+    const alturaFila = Math.max(lLineas.length + haLinea.length, sLineas.length, cLineas.length, tLineas.length, 1) * 4.6 + 6;
+
+    saltoDePaginaSiHaceFalta(alturaFila);
+    if (i % 2 === 1) {
+      doc.setFillColor(245, 247, 244);
+      doc.rect(margen, y - 5, anchoUtil, alturaFila, "F");
+    }
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 40);
+    doc.setFont(undefined, "bold");
+    doc.text(lLineas, colLote, y);
+    doc.setFont(undefined, "normal");
+    if (haLinea.length) doc.text(haLinea, colLote, y + lLineas.length * 4.6);
+    doc.setFontSize(8.5);
+    doc.text(sLineas, colSiembra, y);
+    doc.text(cLineas, colCosecha, y);
+    doc.text(tLineas, colContratistas, y);
+    y += alturaFila;
+  });
+
+  y += 3;
+  doc.setDrawColor(210, 210, 200);
+  doc.line(margen, y, anchoPagina - margen, y);
+  y += 8;
+  doc.setFontSize(10.5);
+  doc.setTextColor(47, 109, 60);
+  doc.setFont(undefined, "bold");
+  doc.text(
+    `TOTAL — ${totales.hectareas.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha — ${totales.produccionTn.toLocaleString("es-AR", { maximumFractionDigits: 1 })} t${
+      rindeGeneral != null ? ` — ${rindeGeneral.toLocaleString("es-AR", { maximumFractionDigits: 0 })} kg/ha promedio` : ""
+    }`,
+    margen,
+    y
+  );
+
+  doc.save(`reporte-campana-${cultivo}-${temporada.replace("/", "-")}.pdf`);
+}
+
+document.getElementById("btn-reporte-campana-pdf").addEventListener("click", () => {
+  const valor = document.getElementById("reporte-campana-completa").value;
+  if (!valor) return;
+  const [cultivo, temporada] = valor.split("__");
+  generarPDFCampanaCompleta(cultivo, temporada);
+});
+
 // --- Detalle en texto plano por categoría (para el PDF) ---
 function detalleTextoPDF(r) {
   if (r.tipo === "pulverizacion") {
